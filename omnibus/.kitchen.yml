@@ -9,7 +9,8 @@ driver:
 
 provisioner:
   name: chef_zero
-  require_chef_omnibus: 13.6.4
+  product_name: chef
+  product_version: 13.6.4
 
 platforms:
   - name: ubuntu-14.04
