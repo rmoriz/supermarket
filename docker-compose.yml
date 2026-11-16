@@ -1,0 +1,114 @@
+# Evaluation stack: Postgres, Redis, an Infra Server, the port and a Workstation.
+# Bring it up with `docker compose up -d --build`, check it with
+# `docker compose exec workstation /work/demo.sh`, then `docker compose down -v`.
+name: supermarket-rs-containers
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: supermarket
+      POSTGRES_PASSWORD: supermarket
+      POSTGRES_DB: supermarket
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./harness/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./containers/db/02-microwave.sql:/docker-entrypoint-initdb.d/02-microwave.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supermarket -d supermarket"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  microwave:
+    image: ${MW_IMAGE:-ghcr.io/rmoriz/microwave-server:0.6.3}
+    environment:
+      MW_DATABASE__DRIVER: postgres
+      MW_DATABASE__URL: postgres://microwave:microwave@db:5432/microwave
+    volumes:
+      - microwave-data:/var/lib/microwave
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/_status"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  supermarket:
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: runtime
+    image: supermarket-rs:dev
+    environment:
+      DATABASE_URL: postgres://supermarket:supermarket@db:5432/supermarket
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-supermarket-rs-evaluation-secret-key-base-000000000000}
+      FQDN: ${FQDN:-supermarket}
+      PORT: "3000"
+      FEATURES: tools,fieri,announcement
+      RAILS_SERVE_STATIC_FILES: "true"
+    volumes:
+      - uploads:/app/public/system
+    ports:
+      - "${SUPERMARKET_BIND:-127.0.0.1}:${SUPERMARKET_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  bootstrap:
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: bootstrap
+      args:
+        MW_IMAGE: ${MW_IMAGE:-ghcr.io/rmoriz/microwave-server:0.6.3}
+    image: supermarket-rs-bootstrap:local
+    environment:
+      MW_DATABASE__DRIVER: postgres
+      MW_DATABASE__URL: postgres://microwave:microwave@db:5432/microwave
+      NODE_NAME: workstation
+      MICROWAVE_ORG: demo
+    volumes:
+      - workstation-keys:/keys
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      microwave:
+        condition: service_healthy
+      supermarket:
+        condition: service_healthy
+
+  workstation:
+    image: cincproject/workstation
+    command: ["sleep", "infinity"]
+    environment:
+      SUPERMARKET_SITE: http://supermarket:3000
+    volumes:
+      - workstation-keys:/keys:ro
+      - ./containers/workstation:/work:ro
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+      supermarket:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  microwave-data:
+  uploads:
+  workstation-keys:

@@ -491,7 +491,10 @@ pub fn router(state: AppState) -> Router {
             "/profile/update_install_preference",
             axum::routing::post(web::profile::update_install_preference),
         )
-        .nest_service("/assets", ServeDir::new("static/assets"));
+        .nest_service("/assets", ServeDir::new("static/assets"))
+        // Paperclip uploads under `public/system` are served by the web tier
+        // upstream; the container has no separate web server in front.
+        .nest_service("/system", ServeDir::new("public/system"));
 
     // `public/` is only mounted when `RAILS_SERVE_STATIC_FILES` is set, which is
     // the same switch `production.rb` uses.

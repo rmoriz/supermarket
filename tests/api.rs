@@ -9,17 +9,43 @@ use std::sync::Once;
 use axum::body::Body;
 use axum::Router;
 use supermarket_rs::{config::Config, routes, state::AppState};
+use tokio::sync::Mutex;
 use tower::ServiceExt;
 
 static SEED: Once = Once::new();
 
-/// The download handlers `UPDATE` the counters, and Postgres answers the
-/// unordered `metrics.versions` scan in heap order, so an `UPDATE` moves the
-/// tuple and reshuffles those keys — the Rails jbuilder view has the same
-/// non-determinism. Tests that mutate or byte-compare the counters take this
-/// lock, re-establish the seeded baseline before reading, and put it back
-/// before releasing.
-static DOWNLOAD_COUNTERS: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+/// The fixture graph and its download counters are shared rows, so the suite
+/// serialises on this lock; the counter-sensitive tests reseed first.
+static COUNTERS: Mutex<()> = Mutex::const_new(());
+
+async fn counters() -> tokio::sync::MutexGuard<'static, ()> {
+    COUNTERS.lock().await
+}
+
+/// Rewrites the fixture graph and its download counters. Another worktree may
+/// seed this same database at the same time and trip the unique keys, so retry.
+fn reseed() {
+    let mut failure = None;
+    for attempt in 0..3 {
+        if attempt > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(250 * attempt));
+        }
+        let output = std::process::Command::new("harness/bin/seed")
+            .env("DATABASE_URL", config().database_url)
+            .output()
+            .expect("run seed");
+        if output.status.success() {
+            return;
+        }
+        failure = Some(output);
+    }
+    let output = failure.expect("at least one attempt");
+    panic!(
+        "seed failed: {}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
 
 fn config() -> Config {
     // Tests default to Redis DB 2: DB 0 belongs to the Rails oracle, and a JSON
@@ -43,30 +69,15 @@ fn config() -> Config {
 
 fn app() -> Router {
     SEED.call_once(|| {
-        // Other worktrees seed this same harness database; overlapping seeds
-        // abort on the truncate/insert gap with a duplicate key, so retry.
-        let mut failure = None;
-        for attempt in 0..3 {
-            if attempt > 0 {
-                std::thread::sleep(std::time::Duration::from_millis(250 * attempt));
-            }
-            let output = std::process::Command::new("harness/bin/seed")
-                .env("DATABASE_URL", config().database_url)
-                .output()
-                .expect("run seed");
-            if output.status.success() {
-                failure = None;
-                break;
-            }
-            failure = Some(output);
-        }
-        if let Some(output) = failure {
-            panic!(
-                "seed failed: {}\n{}",
-                String::from_utf8_lossy(&output.stdout),
-                String::from_utf8_lossy(&output.stderr)
-            );
-        }
+        let output = std::process::Command::new("harness/bin/seed")
+            .env("DATABASE_URL", config().database_url)
+            .output()
+            .expect("run seed");
+        assert!(
+            output.status.success(),
+            "seed failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     });
     let state = AppState::for_tests(config());
     routes::router(state)
@@ -89,41 +100,9 @@ async fn get(path: &str) -> (u16, String) {
     (status, String::from_utf8(body.to_vec()).unwrap())
 }
 
-/// The counters the seed writes for redis/1.0.0 and its cookbook: `(api, web)`.
-const SEEDED_VERSION_COUNTERS: (i32, i32) = (1, 1);
-const SEEDED_COOKBOOK_COUNTERS: (i32, i32) = (2, 3);
-
-/// Puts the redis/1.0.0 counters (and its cookbook's) back to the seeded
-/// values in one transaction. Setting them absolutely rather than decrementing
-/// also repairs drift left by an interrupted run.
-async fn establish_counter_baseline() {
-    let state = AppState::for_tests(config());
-    let mut tx = state.db.begin().await.expect("begin counter reset");
-    sqlx::query(
-        "UPDATE cookbook_versions
-            SET api_download_count = $1, web_download_count = $2
-          WHERE cookbook_id = 1 AND version = '1.0.0'",
-    )
-    .bind(SEEDED_VERSION_COUNTERS.0)
-    .bind(SEEDED_VERSION_COUNTERS.1)
-    .execute(&mut *tx)
-    .await
-    .expect("reset version counters");
-    sqlx::query(
-        "UPDATE cookbooks
-            SET api_download_count = $1, web_download_count = $2
-          WHERE id = 1",
-    )
-    .bind(SEEDED_COOKBOOK_COUNTERS.0)
-    .bind(SEEDED_COOKBOOK_COUNTERS.1)
-    .execute(&mut *tx)
-    .await
-    .expect("reset cookbook counters");
-    tx.commit().await.expect("commit counter reset");
-}
-
 #[tokio::test]
 async fn index_body_is_exact_and_orders_deprecated_last() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/cookbooks?items=2").await;
     assert_eq!(status, 200);
     assert_eq!(
@@ -134,6 +113,7 @@ async fn index_body_is_exact_and_orders_deprecated_last() {
 
 #[tokio::test]
 async fn index_orders_and_filters() {
+    let _guard = counters().await;
     let (_, by_name) = get("/api/v1/cookbooks?items=10").await;
     assert!(by_name.contains(r#""cookbook_name":"oldredis""#));
     let last = by_name.rfind("\"cookbook_name\":\"").unwrap();
@@ -153,6 +133,7 @@ async fn index_orders_and_filters() {
 
 #[tokio::test]
 async fn index_errors_are_byte_exact() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/cookbooks?start=-1").await;
     assert_eq!(status, 400);
     assert_eq!(
@@ -163,40 +144,28 @@ async fn index_errors_are_byte_exact() {
 
 #[tokio::test]
 async fn show_body_is_exact() {
-    let _counters = DOWNLOAD_COUNTERS.lock().await;
-    establish_counter_baseline().await;
+    let _guard = counters().await;
+    reseed();
     let (status, body) = get("/api/v1/cookbooks/redis").await;
     assert_eq!(status, 200);
-    // Stable head, byte for byte, up to the first volatile key.
-    let head = concat!(
-        r#"{"name":"redis","maintainer":"ada","description":"Installs redis, newer.","category":"Database","#,
-        r#""latest_version":"http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","#,
-        r#""external_url":"https://example.test/redis","source_url":"https://example.test/redis","#,
-        r#""issues_url":"https://example.test/redis/issues","average_rating":null,"#,
-        r#""created_at":"2020-02-01T00:00:00.000Z","updated_at":"2020-02-02T00:00:00.000Z","#,
-        r#""up_for_adoption":null,"deprecated":false,"#,
-        r#""versions":["http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","http://localhost:3000/api/v1/cookbooks/redis/versions/1.0.0"],"#,
-        r#""metrics":{"downloads":{"total":5,"versions":{"#
-    );
-    let rest = body
-        .strip_prefix(head)
-        .unwrap_or_else(|| panic!("stable body head changed: {body}"));
-
-    // `metrics.versions` is built from an unordered scan, so its keys come back
-    // in Postgres' physical row order and a download rewrites the heap tuples.
-    // Pin the pairs by key and keep the surrounding bytes exact.
-    let (versions, tail) = rest.split_once('}').expect("versions object closes");
-    let versions: std::collections::BTreeMap<String, i64> =
-        serde_json::from_str(&format!("{{{versions}}}")).expect("versions object parses");
     assert_eq!(
-        versions,
-        std::collections::BTreeMap::from([("1.0.0".to_owned(), 2), ("1.10.0".to_owned(), 2),])
+        body,
+        concat!(
+            r#"{"name":"redis","maintainer":"ada","description":"Installs redis, newer.","category":"Database","#,
+            r#""latest_version":"http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","#,
+            r#""external_url":"https://example.test/redis","source_url":"https://example.test/redis","#,
+            r#""issues_url":"https://example.test/redis/issues","average_rating":null,"#,
+            r#""created_at":"2020-02-01T00:00:00.000Z","updated_at":"2020-02-02T00:00:00.000Z","#,
+            r#""up_for_adoption":null,"deprecated":false,"#,
+            r#""versions":["http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","http://localhost:3000/api/v1/cookbooks/redis/versions/1.0.0"],"#,
+            r#""metrics":{"downloads":{"total":5,"versions":{"1.0.0":2,"1.10.0":2}},"followers":1,"collaborators":1}}"#
+        )
     );
-    assert_eq!(tail, r#"},"followers":1,"collaborators":1}}"#);
 }
 
 #[tokio::test]
 async fn show_is_case_insensitive_and_deprecated_cookbooks_carry_a_replacement() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/cookbooks/OLDRedis").await;
     assert_eq!(status, 200);
     assert!(body.contains(
@@ -206,6 +175,7 @@ async fn show_is_case_insensitive_and_deprecated_cookbooks_carry_a_replacement()
 
 #[tokio::test]
 async fn unknown_cookbook_is_the_not_found_envelope() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/cookbooks/nope").await;
     assert_eq!(status, 404);
     assert_eq!(
@@ -216,6 +186,7 @@ async fn unknown_cookbook_is_the_not_found_envelope() {
 
 #[tokio::test]
 async fn contingent_orders_by_dependent_name() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/cookbooks/redisio/contingent").await;
     assert_eq!(status, 200);
     assert_eq!(
@@ -229,6 +200,7 @@ async fn contingent_orders_by_dependent_name() {
 
 #[tokio::test]
 async fn version_show_covers_latest_and_underscore_forms() {
+    let _guard = counters().await;
     for version in ["latest", "1_0_0"] {
         let (status, body) = get(&format!("/api/v1/cookbooks/redis/versions/{version}")).await;
         assert_eq!(status, 200, "{version}");
@@ -255,8 +227,8 @@ async fn version_show_covers_latest_and_underscore_forms() {
 
 #[tokio::test]
 async fn download_redirects_and_counts_per_protocol() {
-    let _counters = DOWNLOAD_COUNTERS.lock().await;
-    establish_counter_baseline().await;
+    let _guard = counters().await;
+    reseed();
     let before = get("/api/v1/cookbooks/redis").await.1;
     let response = app()
         .oneshot(
@@ -267,23 +239,19 @@ async fn download_redirects_and_counts_per_protocol() {
         )
         .await
         .unwrap();
-    let status = response.status().as_u16();
-    let location = response.headers().get("location").cloned();
-    let after = get("/api/v1/cookbooks/redis").await.1;
-    // Put the baseline back before asserting, so a failed assertion still
-    // leaves the seeded counters for whichever test runs next.
-    establish_counter_baseline().await;
-    assert_eq!(status, 302);
+    assert_eq!(response.status().as_u16(), 302);
     assert_eq!(
-        location.unwrap(),
+        response.headers().get("location").unwrap(),
         "http://localhost:3000/system/cookbook_versions/tarballs/1/original/redis-1.0.0.tgz?1580515200"
     );
+    let after = get("/api/v1/cookbooks/redis").await.1;
     assert_ne!(before, after);
     assert!(after.contains(r#""total":6"#));
 }
 
 #[tokio::test]
 async fn search_is_ranked_and_total_stays_unfiltered() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/search?q=redis").await;
     assert_eq!(status, 200);
     assert!(body.starts_with(r#"{"start":0,"total":4,"items":[{"cookbook_name":"redis""#));
@@ -297,6 +265,7 @@ async fn search_is_ranked_and_total_stays_unfiltered() {
 
 #[tokio::test]
 async fn user_show_maps_cookbooks_and_tools() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/users/ada").await;
     assert_eq!(status, 200);
     assert_eq!(
@@ -311,12 +280,14 @@ async fn user_show_maps_cookbooks_and_tools() {
 
 #[tokio::test]
 async fn github_only_users_are_not_found() {
+    let _guard = counters().await;
     let (status, _) = get("/api/v1/users/alan-gh").await;
     assert_eq!(status, 404);
 }
 
 #[tokio::test]
 async fn metrics_and_health_keys_are_in_upstream_order() {
+    let _guard = counters().await;
     let (status, body) = get("/api/v1/metrics").await;
     assert_eq!(status, 200);
     assert!(body.starts_with(r#"{"total_cookbook_downloads":"#));
@@ -349,6 +320,7 @@ async fn metrics_and_health_keys_are_in_upstream_order() {
 
 #[tokio::test]
 async fn tools_list_search_and_show() {
+    let _guard = counters().await;
     let (_, index) = get("/api/v1/tools").await;
     assert!(index.contains(r#""tool_name":"knife-thing""#));
     assert!(index.starts_with(r#"{"start":0,"total":1,"#));
@@ -368,6 +340,7 @@ async fn tools_list_search_and_show() {
 
 #[tokio::test]
 async fn universe_cache_keys_follow_the_protocol_and_hits_always_increment() {
+    let _guard = counters().await;
     let first = app()
         .oneshot(
             axum::http::Request::builder()
@@ -416,6 +389,7 @@ async fn universe_cache_keys_follow_the_protocol_and_hits_always_increment() {
 
 #[tokio::test]
 async fn unimplemented_routes_still_answer_501() {
+    let _guard = counters().await;
     let (status, _) = get("/api/v1/cookbook-versions/cookstyle_evaluation").await;
     // POST-only route: GET is a 405 from axum, the method matters.
     assert!(
@@ -436,20 +410,18 @@ async fn unimplemented_routes_still_answer_501() {
         .unwrap();
     assert_eq!(response.status().as_u16(), 400);
 
-    // The signed web download redirects now that phase 7/8 covered it. It uses
-    // a cookbook no counter case reads, so it needs no baseline.
+    // The signed web download redirects now that phase 7/8 covered it. The
+    // suite is serialised and the counter cases reseed, so no baseline here.
     let response = app()
         .oneshot(
             axum::http::Request::builder()
-                .uri("/cookbooks/orphan/versions/2.0.0/download")
+                .uri("/cookbooks/redis/versions/1.0.0/download")
                 .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
-    let status = response.status().as_u16();
-    establish_counter_baseline().await;
-    assert_eq!(status, 302);
+    assert_eq!(response.status().as_u16(), 302);
 }
 
 #[allow(dead_code)]

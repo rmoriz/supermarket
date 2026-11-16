@@ -77,6 +77,8 @@ ledger under `docs/ledger/` records a green run per phase.
 per group without a deploy; `docs/cutover-runbook.md` is the operator procedure
 and rollback.
 
+Container evaluation stack: [`docs/containers.md`](docs/containers.md).
+
 ## Licensing
 
 The port in this repository is licensed under the GNU Affero General Public

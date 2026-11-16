@@ -1,0 +1,54 @@
+name: container
+
+on:
+  push:
+    paths:
+      - Containerfile
+      - .dockerignore
+      - docker-compose.yml
+      - containers/**
+      - harness/schema.sql
+      - src/**
+      - templates/**
+      - static/**
+      - public/**
+      - supermarket-ruby/src/supermarket/config/locales/**
+      - supermarket-ruby/src/supermarket/app/assets/data/licenses.json
+      - Cargo.toml
+      - Cargo.lock
+      - build.rs
+      - askama.toml
+      - .github/workflows/container.yml
+  pull_request:
+    paths:
+      - Containerfile
+      - .dockerignore
+      - docker-compose.yml
+      - containers/**
+      - harness/schema.sql
+      - src/**
+      - templates/**
+      - static/**
+      - public/**
+      - supermarket-ruby/src/supermarket/config/locales/**
+      - supermarket-ruby/src/supermarket/app/assets/data/licenses.json
+      - Cargo.toml
+      - Cargo.lock
+      - build.rs
+      - askama.toml
+      - .github/workflows/container.yml
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Containerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - run: docker compose config -q

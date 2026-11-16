@@ -89,10 +89,10 @@ oracle always redirects; replay them with `chat` in `FEATURES`.
 `tests/api.rs` shares one seeded schema across parallel cases. A download shifts
 the download counters and Postgres rewrites the updated heap tuple, which
 reorders the unordered `metrics.versions` map (the Rails jbuilder view has the
-same non-determinism). The download cases now hold a lock, re-establish the
-seeded counters before reading and put them back before asserting, and
-`show_body_is_exact` keeps the stable body bytes exact but compares the
-volatile version map by key instead of by order.
+same non-determinism). The suite now serialises its cases on one lock, and the
+two cases that read or move the counters reseed the fixture graph first, so the
+byte-exact assertions stay byte-exact. The seed retries while another worktree
+may be seeding the same database.
 
 ## Known local-oracle quirks (not port bugs)
 

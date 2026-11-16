@@ -1,0 +1,7 @@
+name 'demo'
+maintainer 'Supermarket maintainers'
+maintainer_email 'demo@example.test'
+license 'Apache-2.0'
+description 'Evaluation cookbook for the container stack'
+version '0.1.0'
+chef_version '>= 12.0'

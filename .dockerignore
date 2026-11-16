@@ -1,0 +1,21 @@
+target/
+.git/
+.github/
+docs/
+tests/
+harness/
+.env
+.env.*
+
+# Only the locale files and the SPDX licence list are read at build time; the
+# rest of the Rails tree stays out of the context and image.
+supermarket-ruby/**
+!supermarket-ruby/src
+!supermarket-ruby/src/supermarket
+!supermarket-ruby/src/supermarket/config
+!supermarket-ruby/src/supermarket/config/locales
+!supermarket-ruby/src/supermarket/config/locales/**
+!supermarket-ruby/src/supermarket/app
+!supermarket-ruby/src/supermarket/app/assets
+!supermarket-ruby/src/supermarket/app/assets/data
+!supermarket-ruby/src/supermarket/app/assets/data/licenses.json
