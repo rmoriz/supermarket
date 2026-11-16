@@ -143,9 +143,6 @@ pub async fn error_page_as_q(
     if let Some((path, name)) = search {
         shell.search_path = path.into();
         shell.search_name = name;
-    } else if class == "tools" {
-        shell.search_path = "/tools".into();
-        shell.search_name = "Tools";
     }
     shell.q = q.map(str::to_owned);
     let body = match status {
@@ -231,8 +228,8 @@ pub async fn welcome(State(state): State<AppState>, headers: HeaderMap) -> Respo
     }
     let cookbook_count: i64 = count(&state.db, "cookbooks").await;
     let user_count: i64 = count(&state.db, "users").await;
-    let shell = shell(&state, None, &headers).title("Welcome - The resource for Chef cookbooks")
-        .description("Supermarket is Chef's open-source community platform. Find, explore and view Chef cookbooks for all of your ops needs.");
+    let shell = shell(&state, None, &headers).title("Welcome - The resource for cookbooks")
+        .description("Supermarket is an open-source community platform. Find, explore and view cookbooks for all of your ops needs.");
     let page = Welcome {
         shell,
         signout: web::flash(&state, &headers)

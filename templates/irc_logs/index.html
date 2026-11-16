@@ -1,8 +1,8 @@
 {% extends "layouts/application.html" %}
 {% block body_class %}irc_logs{% endblock %}
 {% block content %}<div class="page nobg">
-  <h1 class="title">Chef Community Chat</h1>
-  <p>Browse the <a href="https://community.chef.io/slack">Chef Community Slack</a> archives.</p>
+  <h1 class="title">Community Chat</h1>
+  <p>Browse the <a href="https://community.chef.io/slack">Community Slack</a> archives.</p>
   {% if let Some(channel) = channel %}
     <h2>{{ channel }}</h2>
   {% endif %}

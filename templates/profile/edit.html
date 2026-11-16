@@ -31,7 +31,7 @@
             </div>
           {% endif %}
 
-          <p>Your email, password and name are maintained and managed by your Chef account. <a href="{{ chef_profile_url }}">Edit them here.</a> They will be updated the next time you sign in to Supermarket. Avatars are powered by <a href="https://www.gravatar.com">Gravatar</a>.</p>
+          <p>Your email, password and name are maintained and managed by your account. <a href="{{ chef_profile_url }}">Edit them here.</a> They will be updated the next time you sign in to Supermarket. Avatars are powered by <a href="https://www.gravatar.com">Gravatar</a>.</p>
 
           <fieldset>
             <div class="company-field">
@@ -43,7 +43,7 @@
               <input type="text" name="user[twitter_username]" id="user_twitter_username"{% if let Some(value) = user.twitter_username %} value="{{ value }}"{% endif %} placeholder="Twitter Username" title="twitter username" />
             </div>
             <div class="slackusername-field">
-              <label for="user_slack_username">Chef Community Slack Username</label>
+              <label for="user_slack_username">Community Slack Username</label>
               <input type="text" name="user[slack_username]" id="user_slack_username"{% if let Some(value) = user.slack_username %} value="{{ value }}"{% endif %} placeholder="Slack Username" title="slack username" />
             </div>
           </fieldset>
@@ -99,7 +99,7 @@
       <div class="content" id="keys">
         <p>Your Supermarket key is the same as your key on the associated Chef
            Server. You can change your credentials or keys by logging into
-           <a href="{{ chef_oauth2_url }}">this Supermarket's Chef Server</a>.</p>
+           <a href="{{ chef_oauth2_url }}">this Supermarket's server</a>.</p>
         {% if let Some(signature) = public_key_signature %}
           <p>Current key fingerprint for this Supermarket is:</p>
           <p><pre class="install">{{ signature }}</pre></p>
@@ -107,16 +107,16 @@
              have configured in knife. Check with:</p>
           <p><pre class="install">openssl rsa -in your/private_key.pem -pubout -outform DER | openssl md5 -c</pre></p>
           <p>If the signatures do not match, it could be that you have a newer key
-             on the Chef Server than the one known by Supermarket. Supermarket can
+             on the server than the one known by Supermarket. Supermarket can
              get the latest key if you log out of Supermarket and then log back in
              to trigger an account refresh between the systems.</p>
         {% else %}
           <p><i class="fa fa-warning"></i> The account information from
-             <a href="{{ chef_oauth2_url }}">the associated Chef Server</a>
+             <a href="{{ chef_oauth2_url }}">the associated server</a>
              does not appear to contain a public key. Try logging out of
              Supermarket and logging back in. If your key still does not appear
              here, there is probably an issue with the authentication services
-             between Supermarket and the Chef Server. Check
+             between Supermarket and the server. Check
              <a href="https://status.chef.io/">status.chef.io</a> for service
              alerts or for private Supermarkets contact support. You will not be
              able to use Supermarket clients (e.g. knife supermarket or stove)

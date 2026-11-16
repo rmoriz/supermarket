@@ -1,7 +1,8 @@
 # supermarket-rs
 
-A Rust port workspace for [Chef Supermarket](https://github.com/chef/supermarket),
-the community site for Chef cookbooks.
+A Rust port of [Supermarket](https://github.com/chef/supermarket), the community
+site for cookbooks. Upstream branding is stripped from everything visitors see —
+see [`docs/copy-changes.md`](docs/copy-changes.md) for the full inventory.
 
 `supermarket-ruby/` holds the upstream Ruby on Rails application, imported
 verbatim at a pinned commit. It is a **read-only reference**: browse it, grep

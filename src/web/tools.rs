@@ -31,7 +31,11 @@ pub fn pretty_type(kind: &str) -> String {
     if kind == "dsc_resource" {
         return "DSC Resource".into();
     }
-    kind.split('_')
+    // The stored slugs keep their `chef_` prefix (the API reports them
+    // verbatim); only the human label drops the brand: "Chef Infra Tool" ->
+    // "Infra Tool".
+    let label = kind
+        .split('_')
         .map(|part| {
             let mut chars = part.chars();
             match chars.next() {
@@ -40,7 +44,11 @@ pub fn pretty_type(kind: &str) -> String {
             }
         })
         .collect::<Vec<_>>()
-        .join(" ")
+        .join(" ");
+    label
+        .strip_prefix("Chef ")
+        .map(str::to_owned)
+        .unwrap_or(label)
 }
 
 pub struct ToolType {
@@ -285,7 +293,7 @@ pub async fn index(
         .unwrap_or_else(|| "All".into());
     let shell = pages::shell(&state, viewer.as_ref(), &headers)
         .title("Tools & Plugins")
-        .description("Browse and search Chef tools and plugins.")
+        .description("Browse and search tools and plugins.")
         .search("/tools", "Tools", params.q.clone())
         .params(Vec::new(), Vec::new(), params.order.clone(), false);
     let page = Index {
@@ -623,10 +631,10 @@ pub async fn edit(
     };
     let tool = build(row, Some(&viewer));
     if !tool.editable {
-        return pages::error_page_as(&state, &headers, StatusCode::NOT_FOUND, false, "tools").await;
+        return failed_after_load(&state, &headers, StatusCode::NOT_FOUND).await;
     }
     let Some(user) = crate::web::users::find_user_view(&state.db, &viewer.username).await else {
-        return pages::error_page_as(&state, &headers, StatusCode::NOT_FOUND, false, "tools").await;
+        return failed_after_load(&state, &headers, StatusCode::NOT_FOUND).await;
     };
     let title = format!("{} Tools", user.possessive);
     let name = tool.name.clone();
@@ -709,6 +717,22 @@ fn valid_url(value: &str) -> bool {
         return false;
     }
     value.starts_with("http://") || value.starts_with("https://")
+}
+
+/// 404/400 raised *after* `assign_tool` succeeded: upstream's `override_search`
+/// callback has already pointed the layout at the tools index, so the error page
+/// keeps it (unlike a missing slug, which raises before the callback).
+async fn failed_after_load(state: &AppState, headers: &HeaderMap, status: StatusCode) -> Response {
+    pages::error_page_as_q(
+        state,
+        headers,
+        status,
+        false,
+        "tools",
+        None,
+        Some(("/tools", "Tools")),
+    )
+    .await
 }
 
 /// The model validations in declaration order, callbacks first.
@@ -941,8 +965,7 @@ pub async fn create(
         return web::redirect_to_sign_in(&state, &headers, "/tools");
     };
     let Some(fields) = tool_fields(&pairs) else {
-        return pages::error_page_as(&state, &headers, StatusCode::BAD_REQUEST, false, "tools")
-            .await;
+        return failed_after_load(&state, &headers, StatusCode::BAD_REQUEST).await;
     };
     let (name, slug, errors) = validate_tool(&state.db, &fields, None).await;
     if !errors.is_empty() {
@@ -1030,11 +1053,10 @@ pub async fn update(
     };
     let (manage, _) = may_manage(&state.db, &viewer, &row).await;
     if !manage {
-        return pages::error_page_as(&state, &headers, StatusCode::NOT_FOUND, false, "tools").await;
+        return failed_after_load(&state, &headers, StatusCode::NOT_FOUND).await;
     }
     let Some(fields) = tool_fields(&pairs) else {
-        return pages::error_page_as(&state, &headers, StatusCode::BAD_REQUEST, false, "tools")
-            .await;
+        return failed_after_load(&state, &headers, StatusCode::BAD_REQUEST).await;
     };
     let (name, new_slug, errors) = validate_tool(&state.db, &fields, Some(row.id)).await;
     let current_slug = row.slug.clone();
@@ -1104,7 +1126,7 @@ pub async fn destroy(
     };
     let (_, deletable) = may_manage(&state.db, &viewer, &row).await;
     if !deletable {
-        return pages::error_page_as(&state, &headers, StatusCode::NOT_FOUND, false, "tools").await;
+        return failed_after_load(&state, &headers, StatusCode::NOT_FOUND).await;
     }
     let name = row.name.clone();
     let _ = sqlx::query(
@@ -1182,7 +1204,7 @@ pub async fn directory(State(state): State<AppState>, headers: HeaderMap) -> Res
         .collect();
     let shell = pages::shell(&state, viewer.as_ref(), &headers)
         .title("Tools Directory")
-        .description("Browse and search Chef tools and plugins.")
+        .description("Browse and search tools and plugins.")
         .search("/tools", "Tools", None);
     let page = Directory {
         shell,

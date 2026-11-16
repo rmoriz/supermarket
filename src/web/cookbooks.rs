@@ -330,7 +330,7 @@ pub async fn directory(
         .unwrap_or(0);
     let shell = pages::shell(&state, viewer.as_ref(), &headers)
         .title("Cookbooks Directory")
-        .description("Browse and search Chef cookbooks. Learn how to use and create cookbooks for configuring your infrastructure.")
+        .description("Browse and search cookbooks. Learn how to use and create cookbooks for configuring your infrastructure.")
         .search("/cookbooks", "Cookbooks", params.q.clone())
         .params(
             params.badges.clone(),
@@ -468,7 +468,7 @@ pub async fn index(
     }
     let shell = pages::shell(&state, viewer.as_ref(), &headers)
         .title("Cookbooks")
-        .description("Browse and search Chef cookbooks.")
+        .description("Browse and search cookbooks.")
         .params(
             params.badges.clone(),
             params.platforms.clone(),
@@ -597,7 +597,7 @@ async fn adoption_page(state: AppState, headers: HeaderMap, atom: bool) -> Respo
     }
     let shell = pages::shell(&state, viewer.as_ref(), &headers)
         .title("Cookbooks available for Adoption")
-        .description("Browse and search Chef cookbooks that are available for adoption.");
+        .description("Browse and search cookbooks that are available for adoption.");
     let page = Available {
         shell,
         number_of_available_cookbooks: web::pluralize(cookbooks.len() as i64, "Available Cookbook"),

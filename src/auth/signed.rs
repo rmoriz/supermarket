@@ -1,5 +1,5 @@
 //! Port of the `mixlib-authentication` 3.0.10 signed-header protocol, which is
-//! what knife/Chef Infra clients use to prove possession of the RSA key stored
+//! what knife/clients use to prove possession of the RSA key stored
 //! on the account. Verified against Ruby-generated vectors in
 //! `harness/fixtures/signed_requests.json` (regenerate with
 //! `harness/bin/signed_vectors`).

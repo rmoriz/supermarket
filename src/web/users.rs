@@ -418,7 +418,7 @@ pub async fn tools(
     let title = format!("{} Tools", user.possessive);
     let shell = pages::shell(&state, viewer.as_ref(), &headers)
         .title(user.username.clone())
-        .description(format!("{}'s Chef tools and plugins.", user.username))
+        .description(format!("{}'s tools and plugins.", user.username))
         .search("/tools", "Tools", None);
     let page = Tools {
         shell,

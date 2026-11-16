@@ -37,7 +37,7 @@ fn html_layout(cfg: &Config, to: &str, content: &str) -> String {
             "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n",
             "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n",
             "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n",
-            "  <title>Chef Supermarket</title>\n",
+            "  <title>Supermarket</title>\n",
             "  <link rel=\"stylesheet\" href=\"{stylesheet}\" media=\"all\" />\n",
             "</head>\n<body>\n",
             "  <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" id=\"wrapper\">\n",
@@ -45,14 +45,14 @@ fn html_layout(cfg: &Config, to: &str, content: &str) -> String {
             "        <table class=\"content\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n",
             "          <tr>\n            <td class=\"header\" align=\"center\">\n",
             "              <a href=\"{base}\">\n",
-            "                <img alt=\"Chef Supermarket\" title=\"Chef Supermarket\" width=\"251\" ",
+            "                <img alt=\"Supermarket\" title=\"Supermarket\" width=\"251\" ",
             "height=\"63\" class=\"image_fix\" src=\"{logo}\" />\n",
             "</a>            </td>\n          </tr>\n          <tr>\n",
             "            <td class=\"body\">\n              {content}\n            </td>\n",
             "          </tr>\n        </table>\n",
             "        <p align=\"center\" class=\"footer\">\n",
-            "          <strong>Chef</strong> &#8226; 619 Western Ave #400 &#8226; Seattle, WA 98104<br>\n",
-            "          This email was sent to {to} by <a href=\"{base}\">Chef Supermarket</a>.\n",
+            "          <strong>Supermarket</strong> &#8226; 619 Western Ave #400 &#8226; Seattle, WA 98104<br>\n",
+            "          This email was sent to {to} by <a href=\"{base}\">Supermarket</a>.\n",
             "        </p>\n      </td>\n    </tr>\n  </table>\n",
             "  <!-- End of wrapper table -->\n</body>\n</html>\n"
         ),
@@ -68,8 +68,8 @@ fn html_layout(cfg: &Config, to: &str, content: &str) -> String {
 fn text_layout(cfg: &Config, to: &str, content: &str) -> String {
     format!(
         "{content}\n_________________________________________________________\n\n\
-         Chef - 619 Western Ave. #400 - Seattle, WA 98104\n\
-         This email was sent to {to} by Chef Supermarket ({}).\n",
+         Supermarket - 619 Western Ave. #400 - Seattle, WA 98104\n\
+         This email was sent to {to} by Supermarket ({}).\n",
         root_url(cfg)
     )
 }
@@ -128,7 +128,7 @@ pub fn follower_notification(
         unsubscribe = unsubscribe,
     );
     let mut text = format!(
-        "Chef Supermarket - New Cookbook Version\n\
+        "Supermarket - New Cookbook Version\n\
          _________________________________________________________\n\n\n\
          New version of {name} released.\n\n\
          A new version of {name} has been released [{version}].\n\n\
@@ -262,7 +262,7 @@ pub fn collaborator_added(
         class_name = escape(class_name),
     );
     let text = format!(
-        "Chef Supermarket - Collaborator Notification\n\
+        "Supermarket - Collaborator Notification\n\
          _________________________________________________________\n\n\
          You have been added as a collaborator to the {resource} {class_name}.  \
          Find out more details here: {url}\n"
@@ -315,7 +315,7 @@ pub fn adoption_follower(cfg: &Config, to: &str, thing: &str, name: &str, url: &
     let html = format!(
         "Your {thing}, {name}, which is currently up for adoption, got some interest today.<br />\n\
          <a href=\"{url}\">{name}</a>\n<br />\n<br />\n\
-         If you are interested in adopting {name}, please either contact Chef or visit the {thing} page \
+         If you are interested in adopting {name}, please either contact the Supermarket maintainers or visit the {thing} page \
          in order to learn more. You can select the \"Adopt Me\" button in the sidebar from the show page for the {thing}\n"
     );
     let text = html.clone();

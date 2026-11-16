@@ -60,6 +60,23 @@ Run order for the final record: `cargo test` (which now touches only Redis DB
   insert bound the slug into `lowercase_name`); it now binds
   `name.to_lowercase()`, matching the update path and the model callback.
 
+## Brand and copy removal
+
+Upstream's brand words, logos and trademark sentences are gone from every public
+surface: page copy, mail bodies and subjects, page metadata, the footer, README
+and the docs. `docs/copy-changes.md` lists every swap; the same list lives in
+`harness/normalize.rb` (`COPY_SWAPS`), so the parity suite holds the port to it.
+
+- The five brand image files (`supermarket-chef-logo*`, `chef-icon`, `favicon`,
+  `apple-touch-icon`, `logo_email`) now carry neutral `Supermarket` artwork under
+  their upstream filenames and digests, so CSS, HTML and mail markup stay
+  byte-identical.
+- Kept on purpose: `Chef` as a person in the adoption mail and the "Chefs"
+  count label, `Chef::Exceptions` messages, `is not a valid Chef version`,
+  `provider=chef_oauth2`, and anything inside a URL.
+- Full corpus green with these swaps, direct and through the proxy (same counts
+  as in *Final verification*).
+
 ## Known local-oracle quirks (not port bugs)
 
 - Rails' universe cache is a Marshal entry. A JSON value under the same key from

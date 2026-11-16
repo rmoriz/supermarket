@@ -402,7 +402,7 @@ async fn sitemap_refresh(state: &AppState) {
 }
 
 /// The `config/sitemap.rb` document: root, directory, cookbooks, versions and
-/// every user (`user_path(user)`, so an account without a Chef username maps to
+/// every user (`user_path(user)`, so an account without a username maps to
 /// `/users/`).
 pub async fn sitemap_body(state: &AppState) -> String {
     let base = state.cfg.base_url();

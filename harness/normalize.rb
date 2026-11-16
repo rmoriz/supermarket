@@ -36,9 +36,48 @@ module Normalize
 
   # Copy swaps from docs/copy-changes.md, applied to the Rails side only.
   COPY_SWAPS = [
+    # Brand and trademark removal, see docs/copy-changes.md. Longest first.
+    [/Copyright &copy; \d{4} Progress Software Corporation and\/or its subsidiaries or affiliates\. All Rights Reserved\./,
+     "Copyright &copy; PLACEHOLDER_YEAR The Supermarket contributors. All Rights Reserved."],
+    ["Progress and certain product names used herein are trademarks or registered trademarks of Progress Software Corporation and/or one of its subsidiaries or affiliates in the U.S. and/or other countries.",
+     "Certain product names used herein are trademarks or registered trademarks of their respective owners in the U.S. and/or other countries."],
+    ["owners and their inclusion does not imply an endorsement, affiliation, or sponsorship as between Progress and the respective owners.", "owners."],
+    ["Share Your Ideas for Improving Chef", "Share Your Ideas for Improving Supermarket"],
+    ["Chef's open-source community platform", "an open-source community platform"],
+    ["Chef&#39;s open-source community platform", "an open-source community platform"],
+    ["Chef&#39;s ecosystem", "the ecosystem"],
+    ["Chef Software, Inc.", "the Supermarket maintainers"],
+    ["Chef Community Slack", "Community Slack"],
+    ["Chef Community Chat", "Community Chat"],
+    ["Chef Mailing List", "Mailing List"],
+    ["Chef tools and plugins", "tools and plugins"],
+    ["Read the Chef Blog", "Read the Blog"],
+    ["Read the Chef Docs", "Read the Docs"],
+    ["Chef Infra Tool", "Infra Tool"],
+    ["Chef Infra Handler", "Infra Handler"],
+    ["Chef Infra Cookbooks", "cookbooks"],
+    ["Chef Infra cookbook", "cookbook"],
+    ["Chef Infra clients", "clients"],
+    ["Chef Infra Server", "server"],
+    ["Chef Infra Client", "client"],
+    ["distribution in Chef Infra.", "distribution."],
+    ["Chef Workstation", "Workstation"],
+    ["Chef cookbooks", "cookbooks"],
+    ["Chef cookbook", "cookbook"],
     ["Chef Supermarket", "Supermarket"],
     ["Chef's Supermarket", "Supermarket"],
     ["the Chef Supermarket", "the Supermarket"],
+    ["Chef community", "community"],
+    ["While Chef has", "While the Supermarket maintainers have"],
+    ["Chef Server", "server"],
+    ["Chef Account", "Account"],
+    ["Chef account", "account"],
+    ["Chef repo", "repository"],
+    ["Chef's ecosystem", "the ecosystem"],
+    ["Learn Chef", "Learn"],
+    ["Get Chef", "Download"],
+    ["contact Chef", "contact the Supermarket maintainers"],
+    ["Chef Property Menu", "Property Menu"],
     ["Supermarket by Chef", "Supermarket"],
   ].freeze
 
@@ -128,8 +167,12 @@ module Normalize
   def copy(text)
     return nil if text.nil?
 
-    COPY_SWAPS.reduce(text) { |acc, (from, to)| acc.gsub(from, to) }
+    year = text[COPY_YEAR, 1] || Time.new.year.to_s
+    swapped = COPY_SWAPS.reduce(text) { |acc, (from, to)| acc.gsub(from, to) }
+    swapped.gsub("PLACEHOLDER_YEAR", year)
   end
+
+  COPY_YEAR = /Copyright &copy; (\d{4}) Progress Software Corporation/
 
   # Transport details that differ by server (unicorn closes, axum keeps alive and
   # may compress) are not part of the contract.
