@@ -1,0 +1,93 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}pages{% endblock %}
+{% block content %}<div class="page dashboard" data-equalizer>
+  <div class="main" data-equalizer-watch>
+    <div class="heading-with-buttons">
+      <h3 class="title">
+        Followed Cookbooks Activity
+        <small><a class="rss_feed_link show-for-medium-up" href="/users/{{ viewer_username }}/followed_cookbook_activity.atom"><i class="fa fa-rss"></i> rss</a></small>
+      </h3>
+      <div class="buttons">
+        {% if !activity.is_empty() %}
+          <a href="/users/{{ viewer_username }}?tab=follows">You're Following {{ followed_count }}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% if !activity.is_empty() %}
+      <ul class="activity_list">
+        {% for item in activity %}
+          <li>
+            <div>
+              {{ item.owner_gravatar|safe }}
+              {{ item.text|safe }}
+              {{ item.publisher_gravatar|safe }}
+            </div>
+            <small class="date">{{ item.created_at }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="explore_cookbooks">
+        <h2>Looks like you're not following any cookbooks yet!</h2>
+        <p>Search for cookbooks and follow them to get notified when new versions are released.</p>
+        <a class="button radius" href="/cookbooks">Explore Cookbooks</a>
+      </div>
+    {% endif %}
+  </div>
+  <div class="sidebar" data-equalizer-watch>
+    <h3>Your Cookbooks</h3>
+    {% if !cookbooks.is_empty() %}
+      <ul class="simple_listing hide_owner">
+        {% for cookbook in cookbooks %}
+          {% include "cookbooks/_simple_cookbook.html" %}
+        {% endfor %}
+      </ul>
+      <a class="button radius small expand" href="/users/{{ viewer_username }}">View All of Your Cookbooks</a>
+    {% else %}
+      <p><strong>Looking to upload your cookbooks?</strong></p>
+      <ol>
+        <li>Ensure you have a Chef repo configured with your private key</li>
+        <li>Share your cookbook with <code>knife supermarket share COOKBOOK_NAME CATEGORY (options)</code></li>
+      </ol>
+
+      <p><a target="_blank" rel="noopener" href="https://docs.chef.io/workstation/knife_supermarket#share">Read the full share docs.</a></p>
+    {% endif %}
+
+    <h3>Cookbooks You Collaborate On</h3>
+    {% if !collaborated.is_empty() %}
+      <ul class="simple_listing">
+        {% for cookbook in collaborated %}
+          {% include "cookbooks/_simple_cookbook.html" %}
+        {% endfor %}
+      </ul>
+      <a class="button radius small expand" href="/users/{{ viewer_username }}?tab=collaborates">View All Collaborated Cookbooks</a>
+    {% else %}
+      <p>
+        Cookbook owners can specify other users as collaborators, allowing them to manage and upload new versions of a cookbook.
+      </p>
+    {% endif %}
+
+    {% if tools_enabled %}
+      <h3>Tools You Maintain</h3>
+      {% if !tools.is_empty() %}
+        <ul class="simple_listing">
+          {% for tool in tools %}
+            {% include "tools/_simple_tool.html" %}
+          {% endfor %}
+        </ul>
+        <a class="button radius small expand" href="/users/{{ viewer_username }}/tools">View All Tools You Maintain</a>
+      {% else %}
+        <p>It looks like you have not added any Tools to Supermarket. <a href="/tools/new">Add your Tools</a> if you maintain any knife plugins, ohai plugins or chef tools.</p>
+      {% endif %}
+    {% endif %}
+
+    <h4>Resources</h4>
+    <ul class="pretty">
+      <li><a target="blank" href="https://learn.chef.io">Learn Chef</a></li>
+      <li><a target="blank" href="https://community.chef.io/slack">Join Chef Community Slack</a></li>
+      <li><a target="blank" href="https://discourse.chef.io/">Join the Chef Mailing List</a></li>
+      <li><a target="blank" href="https://docs.chef.io">Read the Docs</a></li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

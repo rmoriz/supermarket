@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: supermarket
+          POSTGRES_PASSWORD: supermarket
+          POSTGRES_DB: supermarket_test
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U supermarket"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["56379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://supermarket:supermarket@localhost:55432/supermarket_test
+      REDIS_URL: redis://localhost:56379/0
+      SECRET_KEY_BASE: ci-secret-key-base-ci-secret-key-base
+      FQDN: localhost
+      FEATURES: tools,fieri,announcement
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply schema
+        run: psql "$DATABASE_URL" -q -f harness/schema.sql
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test

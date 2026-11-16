@@ -1,0 +1,63 @@
+# Phase 8 — the last unwired routes: version download redirects, the quality
+# metric routes without a Rails action, and the OAuth request phase.
+- name: web version download
+  method: GET
+  path: /cookbooks/redis/versions/1.0.0/download
+  reset: true
+  observe: [cache]
+- name: web version download unknown version
+  method: GET
+  path: /cookbooks/redis/versions/9.9.9/download
+  reset: true
+- name: web version download unknown cookbook
+  method: GET
+  path: /cookbooks/nope/versions/1.0.0/download
+  reset: true
+- name: latest version download
+  method: GET
+  path: /cookbooks/redis/versions/latest/download
+  reset: true
+
+- name: qm supported platforms
+  method: POST
+  path: /api/v1/quality_metrics/supported_platforms_evaluation
+  reset: true
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+- name: cookbook versions supported platforms
+  method: POST
+  path: /api/v1/cookbook-versions/supported_platforms_evaluation
+  reset: true
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+- name: qm contributing file success
+  method: POST
+  path: /api/v1/quality_metrics/contributing_file_evaluation
+  reset: true
+  body: "cookbook_name=redis&contributing_file_failure=false&contributing_file_feedback=ok&fieri_key=YOUR_FIERI_KEY"
+- name: qm contributing file missing
+  method: POST
+  path: /api/v1/quality_metrics/contributing_file_evaluation
+  reset: true
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+
+- name: oauth request phase needs a token
+  method: POST
+  path: /auth/chef_oauth2
+  reset: true
+- name: oauth request phase chef
+  method: POST
+  path: /auth/chef_oauth2
+  login: ada
+  csrf: true
+  reset: true
+- name: oauth request phase github
+  method: POST
+  path: /auth/github
+  login: ada
+  csrf: true
+  reset: true
+- name: oauth request phase unknown provider
+  method: POST
+  path: /auth/nope
+  login: ada
+  csrf: true
+  reset: true

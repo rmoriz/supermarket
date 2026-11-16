@@ -1,0 +1,15 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}collaborators{% endblock %}
+{% block content %}<div class="page nobg">
+  <h1 class="title">Add Collaborator</h1>
+  <form action="/collaborators" accept-charset="UTF-8" method="post">
+    <label>Cookbook
+      <input type="text" name="collaborator[resourceable_name]" id="collaborator_resourceable_name" />
+    </label>
+    <label>User
+      <input class="collaborators" data-url="/collaborators" type="hidden" name="collaborator[user_id]" id="collaborator_user_id" />
+    </label>
+    <input type="submit" name="commit" value="Add Collaborator" class="button radius" />
+  </form>
+</div>
+{% endblock %}

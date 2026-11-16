@@ -1,0 +1,129 @@
+<div class="main">
+  {% if cookbook.deprecated %}
+    <div class="deprecation-notice">
+      <h2 class="deprecation-copy">
+        <i class="fa fa-exclamation-triangle"></i> The {{ cookbook.name }}
+        cookbook has been deprecated
+      </h2>
+      <p class="deprecation-copy"> Author provided reason for deprecation: </p>
+      <p class="deprecation-copy">{{ cookbook.deprecation_reason }}</p>
+      <p class="deprecation-copy">
+      {% if let Some(replacement) = cookbook.replacement %}
+        You may find that the <a href="/cookbooks/{{ replacement }}">{{ replacement }}</a>
+        cookbook is a suitable alternative.
+      {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+  <small class="rss">
+    <a class="rss_feed_link" href="/cookbooks/{{ cookbook.name }}.atom">
+      <i class="fa fa-rss"></i> RSS
+    </a>
+  </small>
+  <h1 class="heading">
+    <span itemprop="name">{{ cookbook.name }}</span>
+    <small class="version_dropdown">
+      <a class="button radius tiny dropdown secondary" data-dropdown="versions" rel="cookbook_versions" href="#">
+        <span class="versions_count">
+          ({{ versions_count }}) {{ versions_word }}
+        </span>
+        {{ version.version }}
+      </a>
+      <ul id="versions" data-dropdown-content class="f-dropdown">
+        <li>
+        <ul>
+          {% for cookbook_version in cookbook_versions %}
+            <li>
+            <a rel="cookbook_version" href="/cookbooks/{{ cookbook.name }}/versions/{{ cookbook_version.version }}">
+              {{ cookbook_version.version }}
+              {% if cookbook_version.current %}<i class="fa fa-check right"></i>{% endif %}
+            </a>
+            </li>
+          {% endfor %}
+        </ul>
+        </li>
+      </ul>
+    </small>
+
+    {% include "cookbooks/_follow_button_show.html" %}
+  </h1>
+
+  <p itemprop="description">{{ cookbook.description }}</p>
+
+  {% include "cookbooks/_installs.html" %}
+
+  <dl class="tabs" data-tab data-options="deep_linking:true">
+    <dd class="active"><a href="#readme">README</a></dd>
+    <dd><a href="#dependencies" rel="cookbook_dependencies">Dependencies</a></dd>
+    {% if changelog.is_some() %}
+      <dd><a href="#changelog" rel="changelog">Changelog</a></dd>
+    {% endif %}
+    {% if fieri %}
+      <dd>
+      <a href="#quality" rel="quality">Quality
+      <span class="has-tip" title="{{ quality_tip }}">
+        <i class="fa fa-dashboard"></i> {{ pass_rate }}%</a>
+      </span>
+      </dd>
+    {% endif %}
+  </dl>
+  <div class="tabs-content">
+    <div class="content active" id="readme">
+      {{ readme|safe }}
+    </div>
+    <div class="content" id="dependencies">
+      <h3 class="dependent-header">Dependent cookbooks</h3>
+      {% if !dependencies.is_empty() %}
+        <table>
+          <tbody>
+            {% for dependency in dependencies %}
+              <tr>
+                {% if let Some(linked) = dependency.linked %}<td><a rel="cookbook_dependency" href="/cookbooks/{{ linked }}">{{ dependency.text }}</a></td>{% else %}<td>{{ dependency.text }}</td>{% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>This cookbook has no specified dependencies.</p>
+      {% endif %}
+
+      <h3 class="dependent-header">Contingent cookbooks</h3>
+      {% if !contingents.is_empty() %}
+        <dl class="accordion contingents" data-accordion>
+          {% for group in contingents %}
+            <dd class="accordion-navigation">
+            <a href="#panel-{{ group.name }}">
+              {{ group.name }}
+              <span class="right">Applicable Versions <i class="fa fa-plus"></i><i class="fa fa-minus"></i></span>
+            </a>
+            <div id="panel-{{ group.name }}" class="content">
+              <table>
+                <tbody>
+                  {% for contingent in group.items %}
+                    <tr>
+                      <td>
+                        <a href="/cookbooks/{{ contingent.cookbook }}">{{ contingent.text }}</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            </dd>
+          {% endfor %}
+        </dl>
+      {% else %}
+        <p>There are no cookbooks that are contingent upon this one.</p>
+      {% endif %}
+    </div>
+    {% if let Some(changelog) = changelog %}
+      <div class="content" id="changelog">
+        {{ changelog|safe }}
+      </div>
+    {% endif %}
+    {% if fieri %}
+      {% include "cookbooks/_metrics.html" %}
+    {% endif %}
+  </div>
+</div>

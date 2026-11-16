@@ -1,0 +1,19 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}tools{% endblock %}
+{% block content %}<div class="page profile" data-equalizer>
+  {% include "users/_sidebar.html" %}
+
+  <div class="main" data-equalizer-watch>
+    {% include "users/_heading.html" %}
+    {% include "tools/_tabs.html" %}
+
+    <div class="tabs-content">
+      <div class="content active">
+        <h3>Editing {{ tool.name }} <small><a href="{{ view_action }}">View Tool</a></small></h3>
+
+        {% include "tools/_form.html" %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

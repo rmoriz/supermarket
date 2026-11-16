@@ -1,0 +1,98 @@
+{
+  "secret_key_base": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "cookie_name": "_supermarket_session",
+  "purpose": "cookie._supermarket_session",
+  "vectors": [
+    {
+      "session": {
+        "user_id": 7,
+        "csrf": "abc123",
+        "session_id": "s1",
+        "return_to": null
+      },
+      "cookie": "PXbFYelI0jLnF220dNI9SKYFd+UYfFNq5OjyJrxUk4RbIAC/AMa/jNrgDTBWwJ0xbcZ5/mq5ENfv/HcbK4iK2KT6OQvg+XQK3PKZsrHDSwAe2+rqOt1ip2lBBfweG7wJvUAYkEkMKQv0Xrq1jbjwjIE9SkW4aZRLxOYCDSK+CWrV2qNb6F9rXMmMDSrJWXShhOSomUO4K2gMLhp1PG4lNg==--ubn/G5xXDV3EWpJc--KI8UcABt29qXolMq7hP9TQ==",
+      "readback": {
+        "user_id": 7,
+        "csrf": "abc123",
+        "session_id": "s1",
+        "return_to": null
+      }
+    },
+    {
+      "session": {
+        "csrf": "zzz",
+        "session_id": "s2"
+      },
+      "cookie": "O1ZNeWibyvLdjwKXWbfDy6edOLVojr0L+oHWOUuZjlcGS3bBbqpjnJOXFXDHC1QMT9+MZTSJKFAOL+O0uY3mw+Xp1N3cVr1D8hP6jzwGq/97HmqbBZicPoj3b8ckiVAXmdXVEODy6yk7ToBZL7ceKQn7AsE=--ZuCfTXGbndGr8y7L--pk9nkC2y+w1PY1U/TSNLbg==",
+      "readback": {
+        "csrf": "zzz",
+        "session_id": "s2"
+      }
+    },
+    {
+      "session": {
+        "user_id": null,
+        "csrf": "",
+        "session_id": "s3",
+        "return_to": "/cookbooks?page=2"
+      },
+      "cookie": "mP+W+kpURTEQqrFLNLnVMtCb6LHhS1v76m+EPWCXZdr/1sic1wb3/ikm1dqlwNJJVuXo7lKSf3PhSfcyUUZijDsjBAz5FhVbFsrTQaUaLZC3DGxIm8+FF3rZiGnA4Zjxow/0hZzhdj8S7zuvwmoMdV8ygUBReiMFCQh/SJx9ooUSDgSgThO1PoCKEiqQVu2JN/8zw0ZCCnHCOj15l9xz/oDSL9TFYuzTYsqKJCfX62E=--jRhMdmal8E66QX1y--evDu3N71pDrREBwJfbje+w==",
+      "readback": {
+        "user_id": null,
+        "csrf": "",
+        "session_id": "s3",
+        "return_to": "/cookbooks?page=2"
+      }
+    },
+    {
+      "session": {
+        "user_id": 42,
+        "csrf": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+        "session_id": "s4",
+        "flash": {
+          "notice": "hi – ünïcode"
+        }
+      },
+      "cookie": "gCTXyJB1TXtx1kcsxRb434ab+qptAa2BiQEevf/6Sa9piV27C81seI+8vK4IOHxXOra1ZOcKo7VSEanLWgiYL+DxZAtMXZGxlOqn6GJh0bJBoPXsoueXc+6ae4dYQ2jwF4nqSq9uDGhFXqnYB3H32NtWelNBVrV3ifwLjUo8cch+eW7GgZSwz1fuVgMkATzpSoeCnWiwmDK5uuwAl+pwi0946RxhAQJ95+UyU/gaiLJ6fj9qts50JR4fr4bkahZ0YXHs22mDBVLZ2uS9i1tKepMbJXZf0orxzBrNiu80wDWga4tGFpwBDZItu9C4pfvvSFcNPSYo06+z6QNZIUESeZzDvNhzPEfa--lDu5yqPI9IX/fWsy--yATi2ogfAP6RwynjifJvWg==",
+      "readback": {
+        "user_id": 42,
+        "csrf": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+        "session_id": "s4",
+        "flash": {
+          "notice": "hi – ünïcode"
+        }
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "name": "wrong-secret",
+      "cookie": "or3Q5X8kYM04NAaWW4EmePW/1BYLPJdNZSZL7mK4WuVE5BkXCZMC6VSTFMckVEB6H/LBGnNuJeCP3Kkl4UNwcSRBCGEPzh6MmnCQaQjHKjsn7QkFuiUBct3WdpbYM6zSb3ts8INnKi7foBZpx5IRcxNp3mJ7yuRsG9f5a+0ZMWWPOG+AtqL1Weyz7e4prLnZow==--LZnlRuvSjv3WLNec--Hg32pO6h0KulnkNAkz6USw==",
+      "readback": null,
+      "error": "ActiveSupport::MessageEncryptor::InvalidMessage"
+    },
+    {
+      "name": "no-purpose",
+      "cookie": "d0S3AKLeZt+VkJH33QJpP4xGO+98LfJJjdDoAxQuNylelRkydyhZmeyCaMNDfrtedyuqCTPEtNXthOqts4Swv2j9eguLUIJP0rYs9RtpPo/0jKaPl4BJJXvX3tJlr2rMa9Xmd8xky4KyVxHFMKYOJsVFLz1se4ZVMO+g9n+AJdFntBG8KBSd0pprTG8Kut/zOw==--OHM66mnv8r+zE9EI--Q7YIaWV8OA5U7n7zgZKO7A==",
+      "readback": null
+    },
+    {
+      "name": "tampered-tag",
+      "cookie": "PXbFYelI0jLnF220dNI9SKYFd+UYfFNq5OjyJrxUk4RbIAC/AMa/jNrgDTBWwJ0xbcZ5/mq5ENfv/HcbK4iK2KT6OQvg+XQK3PKZsrHDSwAe2+rqOt1ip2lBBfweG7wJvUAYkEkMKQv0Xrq1jbjwjIE9SkW4aZRLxOYCDSK+CWrV2qNb6F9rXMmMDSrJWXShhOSomUO4K2gMLhp1PG4lNg==--ubn/G5xXDV3EWpJc--zzzzKI8UcABt29qXolMq7hP9TQ==",
+      "readback": null,
+      "error": "ActiveSupport::MessageEncryptor::InvalidMessage"
+    },
+    {
+      "name": "truncated",
+      "cookie": "PXbFYelI0jLnF220dNI9SKYFd+UYfFNq5OjyJrxUk4RbIAC/AMa/jNrgDTBWwJ0xbcZ5/mq5ENfv/HcbK4iK2KT6OQvg+XQK3PKZsrHDSwAe2+rqOt1ip2lBBfweG7wJvUA",
+      "readback": null,
+      "error": "ActiveSupport::MessageEncryptor::InvalidMessage"
+    },
+    {
+      "name": "garbage",
+      "cookie": "not-a-cookie",
+      "readback": null,
+      "error": "ActiveSupport::MessageEncryptor::InvalidMessage"
+    }
+  ]
+}

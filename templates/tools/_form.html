@@ -1,0 +1,47 @@
+<form action="{{ form_action }}" accept-charset="UTF-8" class="tool_data" data-abide="true" method="post">
+  {% if editing %}<input type="hidden" name="_method" value="patch" autocomplete="off" />{% endif %}
+  <input type="hidden" name="authenticity_token" value="{{ shell.csrf }}" autocomplete="off" />
+  {% if !errors.is_empty() %}
+    <div class="panel callout radius alert">
+      <p>There were some problems submitting the form:</p>
+      <ul>
+        {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  <div class="name-field">
+    {% if err_name %}<label for="tool_name" class=&quot;error&quot;>Name</label>{% else %}<label for="tool_name">Name</label>{% endif %}
+    <input type="text" name="tool[name]" id="tool_name"{% if let Some(name) = tool.name_value %} value="{{ name }}"{% endif %} placeholder="Name *" required="required" title="Name" {% if err_name %}/ class=&quot;error&quot;{% endif %}/>
+    <small class="error">Name is required.</small>
+  </div>
+  <div class="slug-field">
+    {% if err_slug %}<label for="tool_slug" class=&quot;error&quot;>Slug</label>{% else %}<label for="tool_slug">Slug</label>{% endif %}
+    <input type="text" name="tool[slug]" id="tool_slug"{% if let Some(slug) = tool.slug_value %} value="{{ slug }}"{% endif %} placeholder="Slug *" required="required" title="Slug" {% if err_slug %}/ class=&quot;error&quot;{% endif %}/>
+    <small class="error">Slug is required.</small>
+  </div>
+  <div class="type-field">
+    {% if err_type %}<label for="tool_type" class=&quot;error&quot;>Type</label>{% else %}<label for="tool_type">Type</label>{% endif %}
+    <select id="tool_type" name="tool[type]"{% if err_type %} class=&quot;error&quot;{% endif %}>
+      {% for tool_type in types %}
+        <option value="{{ tool_type.value }}" {% if tool.kind == tool_type.value %}selected="selected"{% endif %}>{{ tool_type.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="description-field">
+    <label for="tool_description">Description</label>
+    <textarea id="tool_description" name="tool[description]" placeholder="Description" rows="4" title="Description">{{ tool.description_raw }}</textarea>
+  </div>
+  <div class="sourl_url-field">
+    {% if err_source_url %}<label for="tool_source_url" class=&quot;error&quot;>Source URL</label>{% else %}<label for="tool_source_url">Source URL</label>{% endif %}
+    <input type="text" name="tool[source_url]" id="tool_source_url" pattern="url" placeholder="Source URL" title="Source URL"{% if let Some(url) = tool.source_url %} value="{{ url }}"{% endif %} {% if err_source_url %}/ class=&quot;error&quot;{% endif %}/>
+    <small class="error">Must be formatted as a URL.</small>
+  </div>
+  <div class="instructions-field">
+    <label for="tool_instructions">Instructions</label>
+    <textarea class="monospace" id="tool_instructions" name="tool[instructions]" placeholder="Install &amp; Usage Instructions (Supports Markdown)" rows="20" title="Instructions">{{ tool.instructions_raw }}</textarea>
+  </div>
+  <section>
+    <input type="submit" name="commit" value="{% if editing %}Update Tool{% else %}Create Tool{% endif %}" class="radius button" data-disable-with="{% if editing %}Update Tool{% else %}Create Tool{% endif %}" />
+    <a class="radius button alert" href="/users/{{ user.username }}/tools">Cancel</a>
+  </section>
+</form>

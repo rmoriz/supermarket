@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Diffs the rendered mailer bodies of the oracle and the Rust binary.
+#
+#   ./harness/bin/mailers
+#
+# Both sides reseed first, render `harness/bin/mailer_fixtures.rb` /
+# `src/bin/mailers.rs` and the JSON maps are compared key by key.
+
+require 'json'
+require 'open3'
+require 'tmpdir'
+
+ROOT = File.expand_path('../..', __dir__)
+CONTAINER = 'harness-oracle-1'
+BASE = ENV.fetch('HARNESS_BASE_URL', 'http://localhost:3005')
+
+def reseed
+  system(File.join(ROOT, 'harness/bin/seed'), out: File::NULL) || abort('seed failed')
+end
+
+def rust_map
+  reseed
+  env = {
+    'RAILS_ENV' => 'test',
+    'DATABASE_URL' => ENV.fetch('DATABASE_URL', 'postgres://supermarket:supermarket@localhost:55432/supermarket_test'),
+    'REDIS_URL' => ENV.fetch('REDIS_URL', 'redis://localhost:56379/1'),
+    'SECRET_KEY_BASE' => ENV.fetch('SECRET_KEY_BASE', 'oracle-secret-key-base-oracle-secret-key-base-0000'),
+    'FQDN' => 'localhost',
+    'PORT' => '3005',
+    'PROTOCOL' => 'http'
+  }
+  out, status = Open3.capture2e(env, File.join(ROOT, 'target/debug/mailers'))
+  abort("rust mailers failed:\n#{out}") unless status.success?
+  JSON.parse(out)
+end
+
+def rails_map
+  reseed
+  script = File.join(ROOT, 'harness/bin/mailer_fixtures.rb')
+  `docker cp #{script} #{CONTAINER}:/tmp/mailer_fixtures.rb`
+  out = `docker exec -e HARNESS_OUT=/tmp/fixtures.json -e HARNESS_BASE_URL=#{BASE} #{CONTAINER} bin/rails runner /tmp/mailer_fixtures.rb 2>&1`
+  abort("rails mailers failed:
+#{out}") unless $?.success?
+  local = File.join(Dir.tmpdir, 'fixtures.json')
+  `docker cp #{CONTAINER}:/tmp/fixtures.json #{local}`
+  JSON.parse(File.read(local))
+end
+
+rails = rails_map
+rust = rust_map
+
+failures = 0
+(rails.keys | rust.keys).each do |name|
+  expected = rails[name]
+  actual = rust[name]
+  if expected == actual
+    puts "MATCH #{name}"
+    next
+  end
+  failures += 1
+  puts "DIFF #{name}"
+  next unless expected && actual
+
+  expected.each do |field, value|
+    next if actual[field] == value
+
+    puts "  field #{field} differs"
+    a = value.to_s
+    b = actual[field].to_s
+    index = (0...[a.size, b.size].min).find { |i| a[i] != b[i] } || [a.size, b.size].min
+    puts "    rails=#{a[[index - 90, 0].max, 220].inspect}"
+    puts "    rust =#{b[[index - 90, 0].max, 220].inspect}"
+  end
+end
+
+puts "#{rails.size - failures}/#{rails.size} MATCH"
+exit(failures.zero? ? 0 : 1)

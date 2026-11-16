@@ -1,0 +1,13 @@
+<div class="heading-with-buttons">
+  <h1 class="title">{{ title }}</h1>
+
+    <div class="buttons">
+      <a rel="view_cookbooks" class="button radius secondary {% if active == "cookbooks" %}active{% endif %}" href="/users/{{ user.username }}">Cookbooks</a>
+  {% if tools_enabled %}
+    <a rel="view_tools" class="button radius secondary {% if active == "tools" || active == "maintains" || active == "add" %}active{% endif %}" href="/users/{{ user.username }}/tools">Tools &amp; Plugins</a>
+  {% endif %}
+  {% if collaborator_groups %}
+    <a class="button radius secondary {% if active == "groups" %}active{% endif %}" href="/users/{{ user.username }}/groups">Groups</a>
+  {% endif %}
+    </div>
+</div>

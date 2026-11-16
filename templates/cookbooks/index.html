@@ -1,0 +1,39 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}cookbooks{% endblock %}
+{% block content %}<div class="page nobg">
+  <div class="heading-with-buttons">
+    <h1 class="title">
+      <span id = "cookbooks_number">
+        {{ number_of_cookbooks }}
+      </span>
+
+      <small>
+        <a class="rss_feed_link show-for-medium-up" href="{{ rss_url|safe }}"><i class="fa fa-rss"></i> RSS</a>
+      </small>
+    </h1>
+
+    <div class="buttons">
+      <span>Sort by</span>
+      {{ most_followed_link|safe }}
+      {{ recently_updated_link|safe }}
+    </div>
+  </div>
+
+  {% if !cookbooks.is_empty() %}
+    <ul class="listing">{% for cookbook in cookbooks %}{% include "cookbooks/_cookbook.html" %}{% endfor %}</ul>
+    {{ pagination|safe }}
+  {% else %}
+    <div class="no-results">
+      <p>Sorry, no cookbooks matched your search for <strong>{{ q }}</strong>.</p>
+
+      <h3>Search Suggestions:</h3>
+      <ul>
+        <li>Check your spelling</li>
+        <li>Try another search term</li>
+        <li><a href="/cookbooks-directory">Browse the cookbooks directory</a></li>
+      </ul>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

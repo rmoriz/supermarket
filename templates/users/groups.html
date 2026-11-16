@@ -1,0 +1,22 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}users{% endblock %}
+{% block content %}<div class="page profile" data-equalizer>
+  {% include "users/_sidebar.html" %}
+
+  <div class="main" data-equalizer-watch>
+    {% include "users/_heading.html" %}
+    <div class="tabs-content">
+      <div class="content active">
+        {% if !groups.is_empty() %}
+          <ul class="listing">
+            {% for group in groups %}
+              {% include "groups/_group.html" %}
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+    <a class="button medium radius" href="/groups/new">Create Group</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}cookbooks{% endblock %}
+{% block content %}<div class="page nobg">
+<h1>Cookbooks Available for Adoption</h1>
+  <div class="heading-with-buttons">
+    <h1 class="title">
+      {{ number_of_available_cookbooks }}
+      <small>
+        <a class="rss_feed_link show-for-medium-up" href="{{ rss_url|safe }}"><i class="fa fa-rss"></i> RSS</a>
+      </small>
+    </h1>
+  </div>
+
+  <ul class="simple_listing zebra">
+    {% for cookbook in cookbooks %}
+      {% include "cookbooks/_simple_cookbook.html" %}
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

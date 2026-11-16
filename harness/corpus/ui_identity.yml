@@ -1,0 +1,240 @@
+- name: sign in page
+  method: GET
+  path: /sign-in
+
+- name: sign up alias
+  method: GET
+  path: /sign-up
+
+- name: sign in page signed in
+  method: GET
+  path: /sign-in
+  login: ada
+
+- name: login redirect
+  method: GET
+  path: /login
+
+- name: signin redirect
+  method: GET
+  path: /signin
+
+- name: logout redirect
+  method: DELETE
+  path: /logout
+
+- name: signout redirect
+  method: DELETE
+  path: /signout
+
+- name: auth failure
+  method: GET
+  path: /auth/failure?message=invalid_credentials
+
+- name: auth request phase needs a token
+  method: POST
+  path: /auth/chef_oauth2
+
+- name: auth request phase
+  method: POST
+  path: /auth/chef_oauth2
+  csrf: true
+
+- name: auth request phase github
+  method: POST
+  path: /auth/github
+  csrf: true
+
+- name: auth request phase unknown provider
+  method: POST
+  path: /auth/nope
+  csrf: true
+
+- name: auth callback without code
+  method: GET
+  path: /auth/chef_oauth2/callback
+
+- name: profile link github
+  method: GET
+  path: /profile/link-github
+  login: ada
+
+- name: profile link github signed out
+  method: GET
+  path: /profile/link-github
+
+- name: profile change password is a 404
+  method: PATCH
+  path: /profile/change_password
+  login: ada
+  csrf: true
+
+- name: collaborators new is a 404
+  method: GET
+  path: /collaborators/new
+  login: ada
+
+- name: group members index is a 404
+  method: GET
+  path: /group_members
+  login: ada
+
+- name: group members new is a 404
+  method: GET
+  path: /group_members/new
+  login: ada
+
+- name: group members show is a 404
+  method: GET
+  path: /group_members/1
+  login: ada
+
+- name: group members edit is a 404
+  method: GET
+  path: /group_members/1/edit
+  login: ada
+
+- name: group members update is a 404
+  method: PATCH
+  path: /group_members/1
+  login: ada
+  csrf: true
+
+- name: groups edit redirects
+  method: GET
+  path: /groups/1/edit
+  login: ada
+
+- name: groups create redirects
+  method: POST
+  path: /groups
+  login: ada
+  csrf: true
+  body: group[name]=Builders
+
+- name: groups update redirects
+  method: PATCH
+  path: /groups/1
+  login: ada
+  csrf: true
+  body: group[name]=Builders
+
+- name: groups destroy redirects
+  method: DELETE
+  path: /groups/1
+  login: ada
+  csrf: true
+
+- name: unsubscribe unknown token
+  method: GET
+  path: /unsubscribe/badtoken
+
+- name: unsubscribe
+  method: GET
+  path: /unsubscribe/cccc1111222233334444555566667777
+  reset: true
+
+- name: unsubscribe twice
+  method: GET
+  path: /unsubscribe/cccc1111222233334444555566667777
+  reset: true
+  headers:
+    Cookie: _supermarket_session=stale
+
+- name: make admin as admin
+  method: PUT
+  path: /users/grace/make_admin
+  login: ada
+  csrf: true
+  reset: true
+
+- name: make admin as non admin
+  method: PUT
+  path: /users/ada/make_admin
+  login: grace
+  csrf: true
+
+- name: make admin unknown user
+  method: PUT
+  path: /users/nobody/make_admin
+  login: ada
+  csrf: true
+
+- name: revoke admin as admin
+  method: DELETE
+  path: /users/grace/revoke_admin
+  login: ada
+  csrf: true
+  reset: true
+
+- name: revoke admin on self
+  method: DELETE
+  path: /users/ada/revoke_admin
+  login: ada
+  csrf: true
+
+- name: unlink account
+  method: DELETE
+  path: /users/1/accounts/1
+  login: ada
+  csrf: true
+  reset: true
+  headers:
+    Referer: http://127.0.0.1/profile/edit
+
+- name: unlink account without referer
+  method: DELETE
+  path: /users/1/accounts/1
+  login: ada
+  csrf: true
+  reset: true
+
+- name: unlink foreign account
+  method: DELETE
+  path: /users/1/accounts/2
+  login: ada
+  csrf: true
+
+- name: group member make admin as group admin
+  method: POST
+  path: /group_members/2/make_admin
+  login: ada
+  csrf: true
+  reset: true
+
+- name: group member make admin as non admin
+  method: POST
+  path: /group_members/2/make_admin
+  login: grace
+  csrf: true
+  reset: true
+
+- name: group member destroy member
+  method: DELETE
+  path: /group_members/2
+  login: ada
+  csrf: true
+  reset: true
+
+- name: group member destroy last admin
+  method: DELETE
+  path: /group_members/1
+  login: ada
+  csrf: true
+  reset: true
+
+- name: group member create without users
+  method: POST
+  path: /group_members
+  login: ada
+  csrf: true
+  reset: true
+  body: group_member[group_id]=1
+
+- name: group member create
+  method: POST
+  path: /group_members
+  login: ada
+  csrf: true
+  reset: true
+  body: group_member[group_id]=1&group_member[user_ids]=3

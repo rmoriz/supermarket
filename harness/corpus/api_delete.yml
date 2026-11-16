@@ -1,0 +1,61 @@
+# DELETE /api/v1/cookbooks/:cookbook and .../versions/:version
+- name: deleting an unknown cookbook is a 404
+  method: DELETE
+  path: /api/v1/cookbooks/nope
+  reset: true
+  sign: ada
+
+- name: an unsigned delete is an unknown user
+  method: DELETE
+  path: /api/v1/cookbooks/redis
+  reset: true
+
+- name: a non-owner non-admin cannot delete a cookbook
+  method: DELETE
+  path: /api/v1/cookbooks/redis
+  reset: true
+  sign: grace
+
+- name: a non-admin owner cannot delete without the flag
+  method: DELETE
+  path: /api/v1/cookbooks/oldredis
+  reset: true
+  sign: grace
+
+- name: an admin deletes a cookbook
+  method: DELETE
+  path: /api/v1/cookbooks/redis
+  reset: true
+  sign: ada
+  observe: [jobs, cache]
+
+- name: an unknown version is a 404
+  method: DELETE
+  path: /api/v1/cookbooks/redis/versions/9.9.9
+  reset: true
+  sign: ada
+
+- name: a non-admin owner cannot delete a version
+  method: DELETE
+  path: /api/v1/cookbooks/redis/versions/1.0.0
+  reset: true
+  sign: grace
+
+- name: an admin deletes a version
+  method: DELETE
+  path: /api/v1/cookbooks/redis/versions/1.0.0
+  reset: true
+  sign: ada
+  observe: [jobs, cache]
+
+- name: the latest alias deletes the newest version
+  method: DELETE
+  path: /api/v1/cookbooks/redis/versions/latest
+  reset: true
+  sign: ada
+
+- name: the only version may not be deleted
+  method: DELETE
+  path: /api/v1/cookbooks/oldredis/versions/0.0.1
+  reset: true
+  sign: ada

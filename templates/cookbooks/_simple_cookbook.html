@@ -1,0 +1,8 @@
+<li>
+  <div class="owner"><a href="/users/{{ cookbook.owner_username }}">{{ cookbook.owner_avatar|safe }}</a></div>
+  <div class="name">
+    <a rel="cookbook" href="/cookbooks/{{ cookbook.name }}">{{ cookbook.name }}</a>
+    <small>{{ cookbook.latest_version }}</small>
+  </div>
+  <small class="followers">{{ cookbook.followers_text }}</small>
+</li>

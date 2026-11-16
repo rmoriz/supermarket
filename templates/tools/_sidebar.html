@@ -1,0 +1,97 @@
+<div class="owner_avatar">
+  <a href="/users/{{ tool.owner_username }}">
+    {{ tool.owner_avatar_large|safe }}
+    <span itemprop="author">{{ tool.maintainer }}</span>
+    <small>{{ tool.owner_name }}</small>
+  </a>
+</div>
+
+<div class="collaborators_avatar">
+  {% for collaborator in collaborators %}
+    <div class="gravatar-container">
+      {% if collaborator.destroy %}
+        <a title="{{ collaborator.name }}" data-dropdown="collaborator-options-{{ collaborator.user_id }}" href="/users/{{ collaborator.username }}">{{ collaborator.avatar|safe }}</a>
+        <ul id="collaborator-options-{{ collaborator.user_id }}" data-dropdown-content class="f-dropdown">
+          <li><a rel="remove-cookbook-collaborator nofollow" data-remote="true" data-method="delete" href="/collaborators/{{ collaborator.id }}"><i class='fa fa-times-circle'></i> {{ collaborator.removal_text }}</a></li>
+        </ul>
+      {% else %}
+        <a title="{{ collaborator.username }}" href="/users/{{ collaborator.username }}">{{ collaborator.avatar|safe }}</a>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+</div>
+
+{% if tool.editable %}
+  <a href="#" data-dropdown="manage" class="button radius secondary small dropdown">Manage Tool</a>
+
+  <ul class="manage_cookbook f-dropdown" id="manage" data-dropdown-content>
+    <li>
+      <a href="/tools/{{ tool.slug }}/edit"><i class="fa fa-pencil"></i> Edit</a>
+    </li>
+
+    {% if tool.deletable %}
+      <li>
+        <a href="/tools/{{ tool.slug }}" data-confirm="{{ tool.confirm_deletion }}" rel="delete_tool nofollow" data-method="delete"><i class="fa fa-trash-o"></i> Delete</a>
+      </li>
+    {% endif %}
+
+    {% if tool.adoptable %}
+      <li><a data-confirm="Are you sure you want to put this up for adoption?" rel="nofollow" data-method="patch" href="/tools/{{ tool.slug }}?tool%5Bup_for_adoption%5D={% if tool.up_for_adoption %}false{% else %}true{% endif %}"><i class="fa fa-heart"></i>{% if tool.up_for_adoption %}Disable adoption{% else %}Put up for adoption{% endif %}</a></li>
+    {% endif %}
+
+    {% if can_add_collaborator %}
+      <li>
+        <a class="addcontributor" rel="add-collaborator" data-reveal-id="collaborators" href="#">
+          <i class="fa fa-plus-square"></i>
+          Add Collaborator
+        </a>
+      </li>
+      <div id="collaborators" class="reveal-modal small" data-reveal>
+        <h1>Add Collaborators</h1>
+        <a class="close-reveal-modal">&#215;</a>
+
+        <form action="/collaborators" accept-charset="UTF-8" method="post">
+          <input type="hidden" name="authenticity_token" value="{{ shell.csrf }}" autocomplete="off" />
+          <div class="row collapse">
+            <div class="small-12 columns">
+              <input value="Tool" autocomplete="off" type="hidden" name="collaborator[resourceable_type]" id="collaborator_resourceable_type" />
+              <input value="{{ tool.id }}" autocomplete="off" type="hidden" name="collaborator[resourceable_id]" id="collaborator_resourceable_id" />
+              <label for="collaborator_users">Users</label>
+              <input id="user_ids" class="collaborators multiple" data-url="{{ ineligible_url|safe }}" autocomplete="off" type="hidden" name="collaborator[user_ids]" />
+            </div>
+            <div class="small-2 columns">
+              <input type="submit" name="commit" value="Add" class="button radius postfix" data-disable-with="Add" />
+            </div>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+  </ul>
+{% endif %}
+
+{% if tool.up_for_adoption %}
+  <div>
+    <a class="button radius tiny" rel="nofollow" data-method="post" href="/tools/{{ tool.slug }}/adoption">Adopt me!</a>
+  </div>
+{% endif %}
+
+<h3>Details</h3>
+<div class="tool-details">
+  <div class="tool-urls">
+    {% if let Some(source_url) = tool.source_url %}
+      <a class="button secondary radius tiny source-url" href="{{ source_url }}" itemprop="codeRepository">View Source</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if !other_tools.is_empty() %}
+  <div class="other">
+    <h3>Other tools by {{ tool.owner_name }}</h3>
+    <ul class="simple_listing">
+      {% for other in other_tools %}
+        {% include "tools/_simple_tool.html" %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}

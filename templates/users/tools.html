@@ -1,0 +1,30 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}users{% endblock %}
+{% block content %}<div class="page profile" data-equalizer>
+  {% include "users/_sidebar.html" %}
+
+  <div class="main" data-equalizer-watch>
+    {% include "users/_heading.html" %}
+    {% include "tools/_tabs.html" %}
+
+    <div class="tabs-content">
+      <div class="content active">
+        {% if !tools.is_empty() %}
+          <ul class="listing">
+            {% for tool in tools %}
+              {% include "tools/_tool.html" %}
+            {% endfor %}
+            {{ pagination|safe }}
+          </ul>
+        {% else %}
+          {% if own_profile %}
+            <p>{{ empty_current }}</p>
+          {% else %}
+            <p>{{ empty_other }}</p>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

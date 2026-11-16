@@ -1,0 +1,116 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}cookbooks{% endblock %}
+{% block content %}<div class="page nobg">
+  <section class="cookbooks_stats">
+    {% include "resources/_community_stats.html" %}
+  </section>
+
+  <ul class="cookbooks_columns {% if !featured.is_empty() %}four_up{% endif %}">
+    {% if !featured.is_empty() %}
+      <li class="cookbooks_column first most-followed">
+        <div class="cookbooks_column_content">
+          <h2 class="title">Featured</h2>
+          <ul class="simple_listing">
+            {% for cookbook in featured %}
+              {% include "cookbooks/_simple_cookbook.html" %}
+            {% endfor %}
+          </ul>
+          <a class="button radius expand" href="/cookbooks?featured=true">View All</a>
+        </div>
+      </li>
+    {% endif %}
+
+    <li class="cookbooks_column recently-updated">
+      <div class="cookbooks_column_content">
+        <h2 class="title">Recently Updated</h2>
+        <ul class="simple_listing">
+          {% for cookbook in recently_updated %}
+            {% include "cookbooks/_simple_cookbook.html" %}
+          {% endfor %}
+        </ul>
+        <a class="button radius expand" href="/cookbooks?order=recently_updated">View All</a>
+      </div>
+    </li>
+
+    <li class="cookbooks_column last most-followed">
+      <div class="cookbooks_column_content">
+        <h2 class="title">Most Followed</h2>
+        <ul class="simple_listing">
+          {% for cookbook in most_followed %}
+            {% include "cookbooks/_simple_cookbook.html" %}
+          {% endfor %}
+        </ul>
+        <a class="button radius expand" href="/cookbooks?order=most_followed">View All</a>
+      </div>
+    </li>
+  </ul>
+
+  <h2 class="text-center">Learn About Cookbooks</h2>
+
+  <div class="learn_about_cookbooks">
+    <div class="learn_about_cookbooks_content">
+      <h3>What is a cookbook?</h3>
+      <p>A cookbook is the fundamental unit of configuration and policy
+      distribution in Chef Infra. Each cookbook defines a scenario, such as everything
+      needed to install and configure PostgreSQL, and then it contains all of the
+      components that are required to support that scenario.</p>
+
+      <h3>How do I use a cookbook?</h3>
+      <p>Interact with cookbooks by using the <code>knife cookbook</code> commands.
+      With <code>knife cookbook</code>, you can create, delete, show, list,
+      download and upload cookbooks on your Chef Infra Server. Read the <a href="https://docs.chef.io/workstation/knife_cookbook">knife cookbook commands documentation</a> for more information.</p>
+
+      <h3>How do I share a cookbook?</h3>
+      <p>In order to share and interact with cookbooks on Supermarket, use the
+      <code>knife supermarket</code> commands. <a href="https://docs.chef.io/workstation/knife_supermarket">The documentation</a> for <code>knife supermarket</code> explains how to
+      download, share, unshare, search, install and list cookbooks on Supermarket.
+      You can also interact with the <a href="https://docs.chef.io/supermarket_api">Supermarket API</a> directly.</p>
+
+      <h3>How do I adopt a cookbook?</h3>
+      <p>Select a cookbook from the <a href="/available_for_adoption">list of adoptable cookbooks</a> and click the "Adopt me!" button.</p>
+    </div>
+
+    <div class="learn_about_cookbooks_sidebar">
+      <h3>Cookbook Resources</h3>
+
+      <ul>
+        <li>
+          <a href="https://docs.chef.io/cookbooks">About cookbooks</a>
+        </li>
+
+        <li>
+          <a href="https://docs.chef.io/recipes">About recipes</a>
+        </li>
+
+        <li>
+          <a href="https://docs.chef.io/supermarket_api">Supermarket cookbooks API documentation</a>
+        </li>
+
+        <li>
+          <a href="https://docs.chef.io/workstation/knife">knife documentation</a>
+        </li>
+
+        <li>
+          <a href="https://docs.chef.io/workstation/kitchen">Test Kitchen documentation</a>
+        </li>
+
+        <li>
+          <a href="https://docs.chef.io/workstation/cookstyle">Cookstyle documentation</a>
+        </li>
+
+        <li>
+          <a href="https://www.chef.io/downloads/tools/workstation">Chef Workstation</a>
+        </li>
+
+        <li>
+          <a href="https://github.com/chef-cookbooks">Cookbooks maintained and supported by Chef Software, Inc.</a>
+        </li>
+
+        <li>
+          <a href="https://github.com/sous-chefs">Cookbooks maintained by the Sous Chefs commmunity.</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

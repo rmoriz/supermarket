@@ -1,0 +1,4 @@
+User-agent: *
+{% if let Some(allow) = robots_allow %}Allow: {{ allow }}
+{% endif %}{% if let Some(disallow) = robots_disallow %}Disallow: {{ disallow }}
+{% endif %}Sitemap: {{ base }}/sitemap.xml.gz

@@ -1,0 +1,24 @@
+<div class="collaborators_avatar">
+  {% for collaborator in collaborators %}
+    <div class="gravatar-container">
+      {% if collaborator.removable %}
+        <a data-dropdown="{{ collaborator.options_id }}" title="{{ collaborator.name }}" href="/users/{{ collaborator.username }}">{{ collaborator.avatar|safe }}</a>
+        <ul id="{{ collaborator.options_id }}" data-dropdown-content class="f-dropdown">
+          <li><a rel="remove-cookbook-collaborator nofollow" data-remote="true" data-method="delete" href="/collaborators/{{ collaborator.id }}"><i class='fa fa-times-circle'></i> {{ collaborator.removal_text }}</a></li>
+        </ul>
+      {% else %}
+        <a title="{{ collaborator.username }}" href="/users/{{ collaborator.username }}">{{ collaborator.avatar|safe }}</a>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  {% if collaborator_groups && !group_resources.is_empty() %}
+    <h2>Collaborator Groups</h2>
+    {% for group_resource in group_resources %}
+      <h2 class="collaboration-group-name"><a href="/groups/{{ group_resource.group_id }}">{{ group_resource.group_name }}</a>  <a class="button tiny alert radius remove" data-method="delete" href="/collaborators/{{ group_resource.group_id }}/destroy_group?resourceable_type={{ group_resource.resourceable_type }}&amp;resourceable_id={{ group_resource.resourceable_id }}">Remove</a> </h2>
+      {% for collaborator in group_resource.members %}
+        <a title="{{ collaborator.username }}" href="/users/{{ collaborator.username }}">{{ collaborator.avatar|safe }}</a>
+      {% endfor %}
+    {% endfor %}
+  {% endif %}
+</div>

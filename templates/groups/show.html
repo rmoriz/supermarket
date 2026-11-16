@@ -1,0 +1,39 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}groups{% endblock %}
+{% block content %}<div class="page nobg">
+  <h1 class="title">
+    {{ group.name }}
+  </h1>
+
+  <h2>Admin Members</h2>
+    <ul class="listing" id="admin_members">
+      {% for member in admin_members %}
+        {% include "groups/_member.html" %}
+      {% endfor %}
+    </ul>
+  <h2>Members</h2>
+    <ul class="listing" id="members">
+      {% for member in members %}
+        {% include "groups/_member.html" %}
+      {% endfor %}
+    </ul>
+
+      <a class="addgroupmember" rel="add-group-member" data-reveal-id="group-members" href="#">
+        <i class="fa fa-plus-square"></i>
+        Add Group Member
+      </a>
+
+    <div id="group-members" class="reveal-modal small" data-reveal>
+      {% include "group_members/_add.html" %}
+    </div>
+
+    <br />
+    <br />
+    <h2>Resources associated with this group:</h2>
+    <ul class="listing" id="resources">
+      {% for resource in resources %}
+        {% include "groups/_resource.html" %}
+      {% endfor %}
+    </ul>
+</div>
+{% endblock %}

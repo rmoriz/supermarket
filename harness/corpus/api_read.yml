@@ -1,0 +1,166 @@
+# Phase 1 read API: every response shape the port implements, including the error
+# paths. Run with: harness/bin/replay harness/corpus/api_read.yml
+- name: cookbook index default
+  method: GET
+  path: /api/v1/cookbooks
+- name: cookbook index paged
+  method: GET
+  path: /api/v1/cookbooks?start=1&items=2
+- name: cookbook index recently_updated
+  method: GET
+  path: /api/v1/cookbooks?order=recently_updated
+- name: cookbook index recently_added
+  method: GET
+  path: /api/v1/cookbooks?order=recently_added
+- name: cookbook index most_downloaded
+  method: GET
+  path: /api/v1/cookbooks?order=most_downloaded
+- name: cookbook index most_followed
+  method: GET
+  path: /api/v1/cookbooks?order=most_followed
+- name: cookbook index unknown order
+  method: GET
+  path: /api/v1/cookbooks?order=bogus
+- name: cookbook index by user
+  method: GET
+  path: /api/v1/cookbooks?user=ada
+- name: cookbook index by unknown user
+  method: GET
+  path: /api/v1/cookbooks?user=nobody
+- name: cookbook index by platform
+  method: GET
+  path: /api/v1/cookbooks?platforms%5B%5D=debian
+- name: cookbook index items above the cap
+  method: GET
+  path: /api/v1/cookbooks?items=500
+- name: cookbook index items zero
+  method: GET
+  path: /api/v1/cookbooks?items=0
+- name: cookbook index items non numeric
+  method: GET
+  path: /api/v1/cookbooks?items=abc
+- name: cookbook index negative start
+  method: GET
+  path: /api/v1/cookbooks?start=-1
+- name: cookbook index negative items
+  method: GET
+  path: /api/v1/cookbooks?items=-4
+- name: cookbook show
+  method: GET
+  path: /api/v1/cookbooks/redis
+- name: cookbook show mixed case
+  method: GET
+  path: /api/v1/cookbooks/ReDiS
+- name: cookbook show deprecated
+  method: GET
+  path: /api/v1/cookbooks/oldredis
+- name: cookbook show missing
+  method: GET
+  path: /api/v1/cookbooks/nope
+- name: cookbook contingent
+  method: GET
+  path: /api/v1/cookbooks/redisio/contingent
+- name: cookbook contingent empty
+  method: GET
+  path: /api/v1/cookbooks/redis/contingent
+- name: cookbook contingent missing
+  method: GET
+  path: /api/v1/cookbooks/nope/contingent
+- name: cookbook version latest
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/latest
+- name: cookbook version exact
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/1.0.0
+- name: cookbook version underscore
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/1_0_0
+- name: cookbook version two segment
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/1.10
+- name: cookbook version missing
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/9.9.9
+- name: cookbook version missing cookbook
+  method: GET
+  path: /api/v1/cookbooks/nope/versions/1.0.0
+- name: cookbook download
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/1.0.0/download
+- name: cookbook download latest
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/latest/download
+- name: cookbook download missing
+  method: GET
+  path: /api/v1/cookbooks/redis/versions/9.9.9/download
+- name: search with results
+  method: GET
+  path: /api/v1/search?q=redis
+- name: search maintainer
+  method: GET
+  path: /api/v1/search?q=ada
+- name: search no results
+  method: GET
+  path: /api/v1/search?q=zzzznotfound
+- name: search empty query
+  method: GET
+  path: /api/v1/search
+- name: search paged
+  method: GET
+  path: /api/v1/search?q=redis&start=1&items=1
+- name: user show
+  method: GET
+  path: /api/v1/users/ada
+- name: user show collaborator
+  method: GET
+  path: /api/v1/users/grace
+- name: user show github only
+  method: GET
+  path: /api/v1/users/alan-gh
+- name: user show missing
+  method: GET
+  path: /api/v1/users/nobody
+- name: tools index
+  method: GET
+  path: /api/v1/tools
+- name: tools index paged
+  method: GET
+  path: /api/v1/tools?items=1
+- name: tools search
+  method: GET
+  path: /api/v1/tools-search?q=knife
+- name: tools search by type
+  method: GET
+  path: /api/v1/tools-search?type=knife_plugin
+- name: tools search wrong type
+  method: GET
+  path: /api/v1/tools-search?type=bogus
+- name: tools show
+  method: GET
+  path: /api/v1/tools/knife-thing
+- name: tools show missing
+  method: GET
+  path: /api/v1/tools/nope
+- name: metrics
+  method: GET
+  path: /api/v1/metrics
+- name: health
+  method: GET
+  path: /api/v1/health
+- name: status alias
+  method: GET
+  path: /status
+- name: universe
+  method: GET
+  path: /api/v1/universe
+- name: universe legacy path
+  method: GET
+  path: /universe
+- name: universe https
+  method: GET
+  path: /api/v1/universe
+  headers:
+    X-Forwarded-Proto: https
+- name: robots
+  method: GET
+  path: /robots.txt

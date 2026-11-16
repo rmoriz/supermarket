@@ -1,0 +1,73 @@
+<div class="profile_sidebar sidebar" data-equalizer-watch>
+  {{ user.avatar_large|safe }}
+  <h3>{{ user.name }}</h3>
+  <h4><img src="{{ chef_icon }}" /> {{ user.username }}</h4>
+
+  <ul>
+    {% if let Some(company) = user.company %}
+      <li class="has-tip" title="The company {{ user.name }} associates with">
+        <span class="fa fa-briefcase"></span> {{ company }}
+      </li>
+    {% endif %}
+
+    {% if let Some(twitter) = user.twitter_username %}
+      <li class="has-tip" title="{{ user.possessive }} Twitter Username">
+        <a href="https://twitter.com/{{ twitter }}" target="_blank" rel="noopener"><i class="fa fa-twitter"></i> {{ twitter }}</a>
+      </li>
+    {% endif %}
+    {% if show_email %}
+      <li class="has-tip" title="{{ user.possessive }} Email">
+        <a href="mailto:{{ user.email }}" target="_blank" rel="noopener"><i class="fa fa-envelope"></i> {{ user.email }}</a>
+      </li>
+    {% endif %}
+
+
+    {% for account in user.github_accounts %}
+      <li class="has-tip" title="{{ user.possessive }} GitHub Username">
+        <a href="https://github.com/{{ account }}" target="_blank" rel="noopener"><i class="fa fa-github"></i> {{ account }}</a>
+      </li>
+    {% endfor %}
+
+    {% if let Some(slack) = user.slack_username %}
+      <li class="has-tip" title="{{ user.possessive }} Slack Username">
+        <i class="fa fa-slack"></i> {{ slack }}
+      </li>
+    {% endif %}
+
+    <li class="has-tip" title="When {{ user.name }} joined Supermarket">
+      <i class="fa fa-clock-o"></i> Joined {{ user.joined }} ago.
+    </li>
+  </ul>
+
+  <ul class="user_stats">
+    <li>
+      <a href="/users/{{ user.username }}">
+        <h3>{{ user.owned_stats|safe }}</h3>
+      </a>
+    </li>
+    <li>
+      <a href="/users/{{ user.username }}?tab=collaborates">
+        <h3>{{ user.collaborated_stats|safe }}</h3>
+      </a>
+    </li>
+    <li>
+      <a href="/users/{{ user.username }}?tab=follows">
+        <h3>{{ user.followed_stats|safe }}</h3>
+      </a>
+    </li>
+  </ul>
+
+  {% if make_admin %}
+    <a rel="make_admin nofollow" class="button medium expand radius" data-method="put" href="/users/{{ user.username }}/make_admin">Make Admin</a>
+  {% else if revoke_admin %}
+    <a rel="revoke_admin" class="button medium expand radius" data-method="delete" href="/users/{{ user.username }}/revoke_admin">Revoke Admin</a>
+  {% endif %}
+
+  {% if own_profile %}
+    {% if profile_controller %}
+      <a rel="view_profile" class="button medium expand radius" href="/users/{{ user.username }}">View Profile</a>
+    {% else %}
+      <a rel="manage_profile" class="button medium expand radius" href="/profile/edit">Manage Profile</a>
+    {% endif %}
+  {% endif %}
+</div>

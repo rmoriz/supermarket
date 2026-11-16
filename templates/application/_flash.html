@@ -1,0 +1,6 @@
+{% for (name, msg) in shell.flash %}
+    <div data-alert class="alert-box alert-box-fade {{ name|flash_class }}">
+      <div>{{ msg }}</div>
+      <a href="#" class="close">&times;</a>
+    </div>
+{% endfor %}

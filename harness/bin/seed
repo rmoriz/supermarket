@@ -1,0 +1,202 @@
+#!/usr/bin/env ruby
+# Seeds the test database with the fixture graph every corpus entry depends on.
+# Deterministic: truncates first, fixed ids, fixed timestamps.
+require "json"
+require "open3"
+
+SQL = +<<~SQL
+  TRUNCATE accounts, categories, collaborators, cookbook_dependencies,
+           cookbook_followers, cookbook_version_platforms, cookbook_versions,
+           cookbooks, group_members, group_resources, groups, hits, metric_results, quality_metrics,
+           supported_platforms, system_emails, tools, users, email_preferences,
+           ownership_transfer_requests, group_members, group_resources
+    RESTART IDENTITY CASCADE;
+
+  -- ada is an admin (roles_mask 1); grace is not. Each can sign as themself.
+  INSERT INTO users (id, first_name, last_name, email, roles_mask, public_key, created_at, updated_at) VALUES
+    (1, 'Ada', 'Lovelace', 'ada@example.test', 1, $key$-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0XKlVq5DL6uEuiGFWAEX
+dDZfckOmWDNY9B0usivRU/xS16FcIsrQazkZMFaE0DAGWLvC/fDFSCQwJGzl+lFQ
+r25yeODxw9PHVPIx200GdG8Z08LnKwzGa9/nDsWCtp/xRoK2dMnC9iIRUwvTpMHa
+K3e1KUolRUCwJwPGPeZB1Mv9RbILYdzaBfxJ8XBkct7HDJKW7ld3/jvEHMd3bn3i
+xu1H6SPugOF3JfbKDAyVxxZ0fyLuLRheU8IQVtDoME6Tn3RJ3xMaGkwUw7la5uN+
+kuHQZK8JLpsognICsQc2ZwDt7DxQkG8GnfKWz+X74ePzJUxwc45C/PTGnf4jpGli
+YQIDAQAB
+-----END PUBLIC KEY-----
+$key$, '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (2, 'Grace', 'Hopper', 'grace@example.test', 0, $key$-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvWSAf+74PbfRbLPX89tY
+snc2WbjLoGEm/XraD0CNGeB9FcoWjioqBo/kwc1oypAGxCEQ5nDR9Sy/ix1/5pX9
+6FDVw9L28SZbIrIgUwzYGcmcl+M0oNGh2TsAJhq62esoIQSLz1C7p2Lzw1g5b1AB
+b8qg+rMr6+9u558ZLAgV7JRqBPSv3CPcMyFRlyahMQFW5w1va7jOgDczIR8ZNCOv
++Dy8+XSiCaQqZzGYPAPq6yMH1gcOQvmxu0PeQ3H299PhUwS7WY4jctjJ/fv7SXZj
+ooOqKPUSLUYpm+xK2wNCcqzY9dcVVZGg34EVY3YJtgboHVMg/wp6dp7Txn2Em726
+DwIDAQAB
+-----END PUBLIC KEY-----
+$key$, '2020-01-02 00:00:00', '2020-01-02 00:00:00'),
+    (3, 'Alan', 'Turing', 'alan@example.test', 0, NULL, '2020-01-03 00:00:00', '2020-01-03 00:00:00');
+
+  INSERT INTO accounts (user_id, uid, username, provider, oauth_token, oauth_expires) VALUES
+    (1, '1001', 'ada', 'chef_oauth2', 'token-ada', '2999-01-01 00:00:00'),
+    (2, '1002', 'grace', 'chef_oauth2', 'token-grace', '2999-01-01 00:00:00'),
+    (3, '3003', 'alan-gh', 'github', 'token-alan', NULL);
+
+  INSERT INTO categories (id, name, slug, created_at, updated_at) VALUES
+    (1, 'Database', 'database', '2020-01-01 00:00:00', '2020-01-01 00:00:00');
+
+  -- The follower counter is inserted inline: an UPDATE afterwards would move
+  -- the row to the end of the heap, and the dashboard lists come from an
+  -- unordered association, so heap order must stay equal to id order.
+  INSERT INTO cookbooks (id, name, lowercase_name, user_id, category_id,
+                         created_at, updated_at, deprecated, replacement_id, source_url,
+                         issues_url, web_download_count, api_download_count, privacy,
+                         up_for_adoption, featured, badges_mask, cookbook_followers_count)
+  VALUES
+    (1, 'redis', 'redis', 1, 1, '2020-02-01 00:00:00', '2020-02-02 00:00:00',
+     FALSE, NULL, 'https://example.test/redis', 'https://example.test/redis/issues', 3, 2, FALSE, NULL, FALSE, 0, 1),
+    (2, 'redisio', 'redisio', 1, 1, '2020-02-03 00:00:00', '2020-02-04 00:00:00',
+     FALSE, NULL, '', '', 0, 0, FALSE, NULL, FALSE, 0, 0),
+    (3, 'oldredis', 'oldredis', 2, NULL, '2020-02-05 00:00:00', '2020-02-06 00:00:00',
+     TRUE, 1, '', '', 0, 0, FALSE, NULL, FALSE, 0, 0),
+    (4, 'orphan', 'orphan', 2, NULL, '2020-02-07 00:00:00', '2020-02-08 00:00:00',
+     FALSE, NULL, '', '', 0, 0, FALSE, NULL, FALSE, 0, 0);
+
+  INSERT INTO cookbook_versions (id, cookbook_id, version, license, description, readme,
+                                 readme_extension, changelog_extension, user_id, created_at,
+                                 updated_at, web_download_count, api_download_count,
+                                 tarball_file_name, tarball_content_type, tarball_file_size,
+                                 tarball_updated_at)
+  VALUES
+    (1, 1, '1.0.0', 'Apache-2.0', 'Installs redis.', '# redis', '', '', 1,
+     '2020-02-01 00:00:00', '2020-02-01 00:00:00', 1, 1, 'redis-1.0.0.tgz', 'application/x-gzip', 100,
+     '2020-02-01 00:00:00'),
+    (2, 1, '1.10.0', 'Apache-2.0', 'Installs redis, newer.', '# redis', '', '', 1,
+     '2020-02-02 00:00:00', '2020-02-02 00:00:00', 1, 1, 'redis-1.10.0.tgz', 'application/x-gzip', 100,
+     '2020-02-02 00:00:00'),
+    (3, 2, '0.1.0', 'Apache-2.0', 'Installs redis from source.', '# redisio', '', '', 1,
+     '2020-02-03 00:00:00', '2020-02-03 00:00:00', 0, 0, 'redisio-0.1.0.tgz', 'application/x-gzip', 100,
+     '2020-02-03 00:00:00'),
+    (4, 3, '0.0.1', 'Apache-2.0', 'Old.', '# oldredis', '', '', 2,
+     '2020-02-05 00:00:00', '2020-02-05 00:00:00', 0, 0, 'oldredis-0.0.1.tgz', 'application/x-gzip', 100,
+     '2020-02-05 00:00:00'),
+    (5, 4, '2.0.0', 'Apache-2.0', 'Connects through redisio.', '# orphan', '', '', 2,
+     '2020-02-07 00:00:00', '2020-02-07 00:00:00', 0, 0, 'orphan-2.0.0.tgz', 'application/x-gzip', 100,
+     '2020-02-07 00:00:00');
+
+  INSERT INTO cookbook_dependencies (cookbook_version_id, name, version_constraint, cookbook_id,
+                                     created_at, updated_at)
+  VALUES (5, 'redisio', '>= 0.1.0', 2, '2020-02-07 00:00:00', '2020-02-07 00:00:00');
+
+  INSERT INTO supported_platforms (id, name, version_constraint, created_at, updated_at) VALUES
+    (1, 'debian', '>= 0.0.0', '2020-01-01 00:00:00', '2020-01-01 00:00:00');
+
+  INSERT INTO cookbook_version_platforms (cookbook_version_id, supported_platform_id, created_at, updated_at)
+  VALUES (1, 1, '2020-01-01 00:00:00', '2020-01-01 00:00:00');
+
+  INSERT INTO cookbook_followers (cookbook_id, user_id, created_at, updated_at) VALUES
+    (1, 2, '2020-03-01 00:00:00', '2020-03-01 00:00:00');
+
+  INSERT INTO collaborators (resourceable_id, resourceable_type, user_id, created_at, updated_at)
+  VALUES (1, 'Cookbook', 2, '2020-03-02 00:00:00', '2020-03-02 00:00:00');
+
+  INSERT INTO hits (label, total) VALUES ('universe', 5);
+
+  INSERT INTO tools (id, user_id, name, lowercase_name, slug, type, description, source_url,
+                     instructions, created_at, updated_at)
+  VALUES (1, 1, 'knife-thing', 'knife-thing', 'knife-thing', 'knife_plugin', 'Does a thing.',
+          'https://example.test/knife-thing', 'gem install knife-thing', '2020-04-01 00:00:00',
+          '2020-04-01 00:00:00');
+
+  INSERT INTO groups (id, name, created_at, updated_at) VALUES
+    (1, 'operators', '2020-05-01 00:00:00', '2020-05-01 00:00:00');
+
+  INSERT INTO group_members (id, group_id, user_id, admin, created_at, updated_at) VALUES
+    (1, 1, 1, TRUE, '2020-05-01 00:00:00', '2020-05-01 00:00:00'),
+    (2, 1, 2, FALSE, '2020-05-01 00:00:00', '2020-05-01 00:00:00');
+
+  INSERT INTO group_resources (id, group_id, resourceable_id, resourceable_type, created_at, updated_at) VALUES
+    (1, 1, 1, 'Cookbook', '2020-05-01 00:00:00', '2020-05-01 00:00:00'),
+    (2, 1, 1, 'Tool', '2020-05-01 00:00:00', '2020-05-01 00:00:00');
+
+  -- A pending ownership transfer from ada to grace on redis, plus one from
+  -- grace to ada on orphan. Tokens are fixed so accept/decline are replayable.
+  INSERT INTO ownership_transfer_requests
+    (id, cookbook_id, recipient_id, sender_id, token, accepted,
+     add_owner_as_collaborator, created_at, updated_at)
+  VALUES
+    (1, 1, 2, 1, 'aaaa1111222233334444555566667777', NULL, TRUE,
+     '2020-06-01 00:00:00', '2020-06-01 00:00:00'),
+    (2, 4, 1, 2, 'bbbb1111222233334444555566667777', NULL, FALSE,
+     '2020-06-01 00:00:00', '2020-06-01 00:00:00');
+
+  INSERT INTO system_emails (id, name, created_at, updated_at) VALUES
+    (1, 'New cookbook version', '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (2, 'Cookbook deleted', '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (3, 'Cookbook deprecated', '2020-01-01 00:00:00', '2020-01-01 00:00:00');
+
+  INSERT INTO email_preferences (id, user_id, system_email_id, token, created_at, updated_at) VALUES
+    (1, 1, 1, 'cccc1111222233334444555566667777', '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (2, 1, 2, 'cccc1111222233334444555566668888', '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (3, 1, 3, 'cccc1111222233334444555566669999', '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (4, 2, 1, 'dddd1111222233334444555566667777', '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (5, 2, 2, 'dddd1111222233334444555566668888', '2020-01-01 00:00:00', '2020-01-01 00:00:00'),
+    (6, 2, 3, 'dddd1111222233334444555566669999', '2020-01-01 00:00:00', '2020-01-01 00:00:00');
+
+  INSERT INTO quality_metrics (id, name, admin_only, created_at, updated_at) VALUES
+    (1, 'License', FALSE, '2020-01-01 00:00:00', '2020-01-01 00:00:00');
+
+  INSERT INTO metric_results (cookbook_version_id, quality_metric_id, failure, feedback,
+                              created_at, updated_at)
+  VALUES (1, 1, FALSE, 'Apache-2.0', '2020-01-01 00:00:00', '2020-01-01 00:00:00');
+
+  -- Explicit ids do not advance the sequences; move them past the fixtures so a
+  -- publish does not collide on a primary key.
+  SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT max(id) FROM users));
+  SELECT setval(pg_get_serial_sequence('accounts', 'id'), (SELECT max(id) FROM accounts));
+  SELECT setval(pg_get_serial_sequence('categories', 'id'), (SELECT max(id) FROM categories));
+  SELECT setval(pg_get_serial_sequence('cookbooks', 'id'), (SELECT max(id) FROM cookbooks));
+  SELECT setval(pg_get_serial_sequence('cookbook_versions', 'id'), (SELECT max(id) FROM cookbook_versions));
+  SELECT setval(pg_get_serial_sequence('supported_platforms', 'id'), (SELECT max(id) FROM supported_platforms));
+  SELECT setval(pg_get_serial_sequence('tools', 'id'), (SELECT max(id) FROM tools));
+  SELECT setval(pg_get_serial_sequence('groups', 'id'), (SELECT max(id) FROM groups));
+  SELECT setval(pg_get_serial_sequence('group_members', 'id'), (SELECT max(id) FROM group_members));
+  SELECT setval(pg_get_serial_sequence('group_resources', 'id'), (SELECT max(id) FROM group_resources));
+  SELECT setval(pg_get_serial_sequence('quality_metrics', 'id'), (SELECT max(id) FROM quality_metrics));
+  SELECT setval(pg_get_serial_sequence('system_emails', 'id'), (SELECT max(id) FROM system_emails));
+  SELECT setval(pg_get_serial_sequence('email_preferences', 'id'), (SELECT max(id) FROM email_preferences));
+  SELECT setval(pg_get_serial_sequence('ownership_transfer_requests', 'id'), (SELECT max(id) FROM ownership_transfer_requests));
+SQL
+
+url = ENV["DATABASE_URL"] || "postgres://supermarket:supermarket@localhost:55432/supermarket_test"
+
+# Local psql is optional: fall back to the harness container.
+out, status =
+  if system("command -v psql > /dev/null 2>&1")
+    Open3.capture2e("psql", url, "-q", "-v", "ON_ERROR_STOP=1", stdin_data: SQL)
+  else
+    Open3.capture2e(
+      "docker", "exec", "-i", "harness-postgres-1",
+      "psql", "-U", "supermarket", "-d", "supermarket_test",
+      "-q", "-v", "ON_ERROR_STOP=1", stdin_data: SQL
+    )
+  end
+puts out
+exit(status.exitstatus) unless status.success?
+
+# Cache hygiene, best effort. The Rust port keeps its cache in Redis DB 1 and is
+# flushed whole. The oracle keeps its rollout feature flags in DB 0, so only the
+# universe cache keys are removed there; flushing DB 0 would deactivate every
+# feature for the life of the Rails process (the adapter is memoized).
+REDIS = ENV["REDIS_URL_RUST"] || "redis://localhost:56379/1"
+
+def redis(*args)
+  Open3.capture2e("docker", "exec", "harness-redis-1", "redis-cli", *args)
+end
+
+redis("-n", "1", "flushdb")
+# Both sides cache the universe under these keys; the port must flush both.
+redis("-n", "0", "set", "http-universe", "cached")
+redis("-n", "0", "set", "https-universe", "cached")
+redis("-n", "0", "eval",
+      "for _, k in ipairs(redis.call('keys', '*-universe')) do redis.call('del', k) end return 1",
+      "0")

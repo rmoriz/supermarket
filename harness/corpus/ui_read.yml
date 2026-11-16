@@ -1,0 +1,137 @@
+# Phase 3 read UI: guest and signed-in pages, every search/sort/tab variant,
+# unknown ids, robots and the atom feed. Run with:
+#   harness/bin/replay harness/corpus/ui_read.yml
+- name: welcome
+  method: GET
+  path: /
+- name: robots
+  method: GET
+  path: /robots.txt
+- name: documentation
+  method: GET
+  path: /documentation
+- name: dashboard guest
+  method: GET
+  path: /dashboard
+- name: cookbook index
+  method: GET
+  path: /cookbooks
+- name: cookbook index search
+  method: GET
+  path: /cookbooks?q=redis
+- name: cookbook index order and filters
+  method: GET
+  path: /cookbooks?order=recently_updated&badges%5B%5D=partner&platforms%5B%5D=debian&deprecated=true
+- name: cookbook index page two
+  method: GET
+  path: /cookbooks?page=2
+- name: cookbook directory
+  method: GET
+  path: /cookbooks-directory
+- name: cookbook directory search
+  method: GET
+  path: /cookbooks-directory?q=old&order=recently_added
+- name: cookbooks for adoption
+  method: GET
+  path: /available_for_adoption
+- name: cookbook show
+  method: GET
+  path: /cookbooks/redis
+- name: cookbook show deprecated
+  method: GET
+  path: /cookbooks/oldredis
+- name: cookbook show unknown
+  method: GET
+  path: /cookbooks/nope
+- name: cookbook show version
+  method: GET
+  path: /cookbooks/redis/versions/1.0.0
+- name: cookbook show unknown version
+  method: GET
+  path: /cookbooks/redis/versions/9.9.9
+- name: cookbook download redirect
+  method: GET
+  path: /cookbooks/redis/download
+- name: group index json
+  method: GET
+  path: /groups
+- name: group index json filtered
+  method: GET
+  path: /groups?q=oper
+- name: group show
+  method: GET
+  path: /groups/1
+- name: group show unknown
+  method: GET
+  path: /groups/999
+- name: group new
+  method: GET
+  path: /groups/new
+- name: tool index
+  method: GET
+  path: /tools
+- name: tool index search
+  method: GET
+  path: /tools?q=thing
+- name: tool index type
+  method: GET
+  path: /tools?type=knife_plugin&order=created_at
+- name: tool show
+  method: GET
+  path: /tools/knife-thing
+- name: tool show unknown
+  method: GET
+  path: /tools/nope
+- name: user profile
+  method: GET
+  path: /users/ada
+- name: user profile collaborates
+  method: GET
+  path: /users/ada?tab=collaborates
+- name: user profile follows
+  method: GET
+  path: /users/ada?tab=follows
+- name: user profile unknown
+  method: GET
+  path: /users/nope
+- name: user tools
+  method: GET
+  path: /users/ada/tools
+- name: user groups
+  method: GET
+  path: /users/ada/groups
+- name: user activity feed
+  method: GET
+  path: /users/ada/followed_cookbook_activity
+- name: dashboard signed in
+  method: GET
+  path: /dashboard
+  login: ada
+- name: tool new signed in
+  method: GET
+  path: /tools/new
+  login: ada
+- name: tool edit as owner
+  method: GET
+  path: /tools/knife-thing/edit
+  login: ada
+- name: tool edit as other
+  method: GET
+  path: /tools/knife-thing/edit
+  login: grace
+- name: profile signed in as admin
+  method: GET
+  path: /users/grace
+  login: ada
+- name: profile signed in as self
+  method: GET
+  path: /users/ada
+  login: ada
+- name: group show signed in as admin member
+  method: GET
+  path: /groups/1
+  login: ada
+- name: cookbook show signed in owner
+  method: GET
+  path: /cookbooks/redis
+  login: ada

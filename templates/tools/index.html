@@ -1,0 +1,38 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}tools{% endblock %}
+{% block content %}<div class="page nobg">
+  <div class="heading-with-buttons">
+    <h1 class="title">
+      Tools &amp; Plugins
+      <small>
+        <a class="rss_feed_link show-for-medium-up" href="{{ rss_url|safe }}"><i class="fa fa-rss"></i> RSS</a>
+      </small>
+    </h1>
+    <div class="buttons">
+      <span>Filter by</span>
+      <a class="button radius tiny dropdown secondary" data-dropdown="type" href="#">
+        {{ type_label }}
+      </a>
+      {% if shell.viewer.is_some() %}
+        <a class="button radius tiny secondary" href="/tools/new">Add Tool</a>
+      {% endif %}
+      <ul id="type" data-dropdown-content class="f-dropdown">
+        <li><a href="/tools">All</a></li>
+        {% for link in type_links %}
+          <li><a href="{{ link.1|safe }}">{{ link.0 }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  {% if !tools.is_empty() %}
+    <ul class="listing">{% for tool in tools %}{% include "tools/_tool.html" %}{% endfor %}</ul>
+    {{ pagination|safe }}
+  {% else %}
+    <div class="no-results">
+      <p>Sorry, no tools match this criteria. <a href="/tools">View all tools</a>.</p>
+    </div>
+    <div id="extra-spacing"></div>
+  {% endif %}
+</div>
+{% endblock %}

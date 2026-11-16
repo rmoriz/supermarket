@@ -1,0 +1,181 @@
+# POST /api/v1/cookbooks — publish path, auth chain, validators.
+# Every mutation entry reseeds so both sides start from the same graph.
+- name: upload without any part is a missing cookbook part
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+
+- name: upload with only a cookbook part is a missing tarball part
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  multipart:
+    cookbook:
+      value: '{}'
+
+- name: unsigned upload is an unknown user
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/brand-new.tgz
+
+- name: upload signed as an unknown user
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: nobody
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/brand-new.tgz
+
+- name: upload signed as a github-only account has no public key
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: alan-gh
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/brand-new.tgz
+
+- name: a non-owner cannot upload to an existing cookbook
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: grace
+  multipart:
+    cookbook:
+      value: '{"category":"Database"}'
+    tarball:
+      file: fixtures/upload/redis-2.0.0.tgz
+
+- name: a collaborator can upload to the cookbook
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: grace
+  multipart:
+    cookbook:
+      value: '{"category":"Database"}'
+    tarball:
+      file: fixtures/upload/redis-2.0.0.tgz
+      # grace is a collaborator on redis in the seed; see seed collaborators row.
+  headers: {}
+
+- name: duplicate version
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{"category":"Database"}'
+    tarball:
+      file: fixtures/upload/redis-1.0.0-dup.tgz
+
+- name: unknown category
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{"category":"Nope"}'
+    tarball:
+      file: fixtures/upload/brand-new.tgz
+
+- name: a tarball sent as a plain value is not a file
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      value: 'tarball!'
+
+- name: a tarball that is not gzipped
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/not-gzip.tgz
+
+- name: metadata that is not an object
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/bad-metadata.tgz
+
+- name: invalid platform and dependency constraints
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/bad-platform.tgz
+
+- name: invalid cookbook version
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/bad-version.tgz
+
+- name: invalid cookbook name
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/bad-name.tgz
+
+- name: missing README
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  multipart:
+    cookbook:
+      value: '{}'
+    tarball:
+      file: fixtures/upload/no-readme.tgz
+
+- name: a successful publish
+  method: POST
+  path: /api/v1/cookbooks
+  reset: true
+  sign: ada
+  observe: [jobs, cache]
+  multipart:
+    cookbook:
+      value: '{"category":"Database"}'
+    tarball:
+      file: fixtures/upload/brand-new.tgz

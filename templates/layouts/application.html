@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimal-ui">
+    <title>{% if let Some(title) = shell.title %}{{ title }} - Supermarket{% else %}Supermarket{% endif %}</title>
+    <meta name="description" content="{% if let Some(description) = shell.description %}{{ description }}{% else %}Supermarket{% endif %}">
+    {% if shell.no_crawl %}
+      <meta name="robots" content="noindex, nofollow">
+    {% endif %}
+    <link rel="shortcut icon" href="{{ shell.favicon }}" type="image/x-icon">
+    <link rel="icon" href="{{ shell.favicon }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ shell.apple_touch_icon }}"/>
+    <link rel="stylesheet" href="{{ shell.stylesheet }}" media="all" />
+    {% if shell.fonts %}
+      <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Montserrat:400,700" />
+    {% endif %}
+    <meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="{{ shell.csrf }}" />
+    {% if !shell.air_gapped %}
+      {% include "application/_analytics.html" %}
+    {% endif %}
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    <div class="off-canvas-wrap">
+      <div class="inner-wrap">
+        <!-- Chef Property Menu -->
+        <aside class="left-off-canvas-menu">
+          <ul class="off-canvas-list show-for-medium-down">
+            <li><a href="/cookbooks-directory">Cookbooks</a></li>
+            {% if shell.tools %}
+              <li><a href="/tools">Tools &amp; Plugins</a></li>
+            {% endif %}
+            <li class="more-info"><a>More Info</a></li>
+            {% if shell.viewer.is_none() %}
+              <li><a rel="sign_in nofollow" data-method="post" href="/auth/chef_oauth2">Sign In</a></li>
+            {% endif %}
+          </ul>
+          <ul class="off-canvas-list">
+            <li><a target="_blank" rel="noopener" href="https://www.chef.io">Get Chef</a></li>
+            <li><a target="_blank" rel="noopener" href="https://learn.chef.io">Learn Chef</a></li>
+            <li><a target="_blank" rel="noopener" href="https://docs.chef.io">Docs</a></li>
+            <li><a target="_blank" rel="noopener" href="https://www.chef.io/training">Training</a></li>
+          </ul>
+        </aside>
+
+        <header class="globalheader">
+          <a class="left-off-canvas-toggle"><i class="fa fa-bars"></i><span class="hide">Menu</span></a>
+          <div class="inner_wrap">
+            <div class="logo_and_nav_toggle">
+              <h2 class="logochef"><a href="/"><span>Supermarket</span></a></h2>
+            </div>
+            {% include "application/_appheader.html" %}
+          </div>
+        </header>
+
+        {% if shell.announcement %}
+          {% include "application/_announcement_banner.html" %}
+        {% endif %}
+
+        {% include "application/_flash.html" %}
+        {% include "application/_search.html" %}
+
+        <div class="container">
+          {% block content %}{% endblock %}
+        </div>
+        <footer class="footer">
+          Copyright &copy; {{ shell.year }} Progress Software Corporation and/or its subsidiaries or affiliates. All Rights Reserved.
+          <br><br>
+          Progress and certain product names used herein are trademarks or registered trademarks of Progress Software Corporation and/or one of its subsidiaries or affiliates in the U.S. and/or other countries.
+          <br>
+          See <a href="https://www.progress.com/legal/trademarks">Trademarks</a>for appropriate markings. All rights in any other trademarks contained herein are reserved by their respective owners and their inclusion does not imply an endorsement, affiliation, or sponsorship as between Progress and the respective owners.
+          <br><br><a href="https://docs.chef.io/community_guidelines">Code of Conduct</a>
+          <a href="https://www.progress.com/legal/terms-of-use">Terms and Conditions of Use</a>
+          <a href="https://www.progress.com/legal/privacy-policy">Privacy Policy</a>
+          <a href="https://www.progress.com/legal/cookie-policy">Cookie Policy</a>
+          <a href="https://www.progress.com/legal/trademarks">Trademark Policy</a>
+          <a href="https://status.chef.io">Status</a>
+        </footer>
+
+        <a class="exit-off-canvas"></a>
+      </div>
+    </div>
+
+    <script src="{{ shell.script }}"></script>
+  </body>
+</html>

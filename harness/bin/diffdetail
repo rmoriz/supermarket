@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+# Prints a compact structural diff between the rails and rust halves of a
+# replay JSONL line whose verdict is DIFF.
+require "json"
+
+File.readlines(ARGV[0]).each do |line|
+  record = JSON.parse(line)
+  next unless record["verdict"] == "DIFF"
+
+  puts "=== #{record['name']}"
+  rails = record["rails"] || {}
+  rust = record["rust"] || {}
+  %w[status].each { |key| puts "#{key}: rails=#{rails[key].inspect} rust=#{rust[key].inspect}" }
+  a = rails["headers"] || {}
+  b = rust["headers"] || {}
+  puts "only rails headers: #{(a.keys - b.keys).inspect}"
+  puts "only rust headers: #{(b.keys - a.keys).inspect}"
+  (a.keys & b.keys).each do |key|
+    puts "header #{key}: rails=#{a[key].inspect} rust=#{b[key].inspect}" if a[key] != b[key]
+  end
+  if rails["body"] != rust["body"]
+    puts "rails body: #{rails['body'].inspect[0, 600]}"
+    puts "rust  body: #{rust['body'].inspect[0, 600]}"
+  end
+  puts "observed rails: #{record['rails_observed'].inspect}"
+  puts "observed rust:  #{record['rust_observed'].inspect}"
+end

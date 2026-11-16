@@ -1,0 +1,7 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}{% if version_page %}cookbook_versions{% else %}cookbooks{% endif %}{% endblock %}
+{% block content %}<div class="page resource cookbook_show" data-equalizer{% if !version_page %} itemscope itemtype="http://schema.org/Code"{% endif %}>
+  {% include "cookbooks/_main.html" %}
+  {% include "cookbooks/_sidebar.html" %}
+</div>
+{% endblock %}

@@ -143,3 +143,7 @@ en:
       missing_version_tag_feedback: "Evaluation POST must contain version_tag_feedback."
       missing_no_binaries_failure: "Evaluation POST must contain no_binaries_failure."
       missing_no_binaries_feedback: "Evaluation POST must contain no_binaries_feedback."
+
+  errors:
+    messages:
+      blank: "can't be blank"

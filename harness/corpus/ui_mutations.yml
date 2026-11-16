@@ -1,0 +1,408 @@
+# Phase 4 — signed-in UI mutations: follow, URLs, deprecation, collaboration,
+# ownership transfer and profile. Every entry reseeds both sides first.
+
+- name: follow as guest stores the location
+  method: PUT
+  path: /cookbooks/orphan/follow
+  reset: true
+
+- name: follow an unknown cookbook as guest
+  method: PUT
+  path: /cookbooks/nope/follow
+  reset: true
+
+- name: follow returns the list button
+  method: PUT
+  path: /cookbooks/orphan/follow?list=true
+  login: grace
+  reset: true
+
+- name: follow a cookbook already followed
+  method: PUT
+  path: /cookbooks/redis/follow
+  login: grace
+  reset: true
+
+- name: unfollow returns the show button
+  method: DELETE
+  path: /cookbooks/redis/unfollow
+  login: grace
+  reset: true
+
+- name: unfollow a cookbook that is not followed
+  method: DELETE
+  path: /cookbooks/orphan/unfollow
+  login: grace
+  reset: true
+
+- name: update urls as owner
+  method: PATCH
+  path: /cookbooks/redis
+  login: ada
+  reset: true
+  csrf: true
+  body: cookbook[source_url]=https%3A%2F%2Fnew.example.test&cookbook[issues_url]=https%3A%2F%2Fnew.example.test%2Fissues
+
+- name: update urls as collaborator
+  method: PATCH
+  path: /cookbooks/redis
+  login: grace
+  reset: true
+  csrf: true
+  body: cookbook[source_url]=https%3A%2F%2Fcollab.example.test
+
+- name: update urls as non collaborator
+  method: PATCH
+  path: /cookbooks/redisio
+  login: grace
+  reset: true
+  csrf: true
+  body: cookbook[source_url]=https%3A%2F%2Fnope.example.test
+
+- name: update urls as guest
+  method: PATCH
+  path: /cookbooks/redis
+  reset: true
+  csrf: true
+  body: cookbook[source_url]=https%3A%2F%2Fguest.example.test
+
+- name: put a cookbook up for adoption
+  method: PATCH
+  path: /cookbooks/redis
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: cookbook%5Bup_for_adoption%5D=true
+
+- name: take a cookbook off adoption
+  method: PATCH
+  path: /cookbooks/redis
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: cookbook%5Bup_for_adoption%5D=false
+
+- name: update an unknown cookbook
+  method: PATCH
+  path: /cookbooks/nope
+  login: ada
+  reset: true
+  csrf: true
+  body: cookbook%5Bsource_url%5D=x
+
+- name: deprecate in favour of a live cookbook
+  method: PUT
+  path: /cookbooks/redis/deprecate
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: cookbook%5Breplacement%5D=redisio&cookbook%5Bdeprecation_reason%5D=old
+
+- name: deprecate in favour of a deprecated cookbook
+  method: PUT
+  path: /cookbooks/redis/deprecate
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: cookbook%5Breplacement%5D=oldredis
+
+- name: deprecate an already deprecated cookbook
+  method: PUT
+  path: /cookbooks/oldredis/deprecate
+  login: grace
+  reset: true
+  csrf: true
+
+- name: deprecate as a non owner
+  method: PUT
+  path: /cookbooks/redis/deprecate
+  login: grace
+  reset: true
+  csrf: true
+
+- name: deprecate an unknown cookbook
+  method: PUT
+  path: /cookbooks/nope/deprecate
+  login: ada
+  reset: true
+  csrf: true
+
+- name: undeprecate as owner
+  method: DELETE
+  path: /cookbooks/oldredis/deprecate
+  login: grace
+  reset: true
+  csrf: true
+
+- name: undeprecate as admin
+  method: DELETE
+  path: /cookbooks/oldredis/deprecate
+  login: ada
+  reset: true
+  csrf: true
+
+- name: undeprecate a live cookbook
+  method: DELETE
+  path: /cookbooks/redis/deprecate
+  login: ada
+  reset: true
+  csrf: true
+
+- name: toggle featured as admin
+  method: PUT
+  path: /cookbooks/redis/toggle_featured
+  login: ada
+  reset: true
+  csrf: true
+
+- name: toggle featured back off
+  method: PUT
+  path: /cookbooks/redis/toggle_featured
+  login: ada
+  reset: true
+  csrf: true
+  headers:
+    X-Pre-Feature: "1"
+
+- name: toggle featured as non admin
+  method: PUT
+  path: /cookbooks/redis/toggle_featured
+  login: grace
+  reset: true
+  csrf: true
+
+- name: deprecate search
+  method: GET
+  path: /cookbooks/redis/deprecate_search?q=redo
+  login: ada
+  reset: true
+
+- name: deprecate search without a query
+  method: GET
+  path: /cookbooks/redis/deprecate_search
+  login: ada
+  reset: true
+
+- name: deprecate search for an unknown cookbook
+  method: GET
+  path: /cookbooks/nope/deprecate_search?q=x
+  login: ada
+  reset: true
+
+- name: adoption as guest
+  method: POST
+  path: /cookbooks/redis/adoption
+  reset: true
+  csrf: true
+
+- name: adoption as a signed in user
+  method: POST
+  path: /cookbooks/redis/adoption
+  login: grace
+  reset: true
+  csrf: true
+  observe: [jobs]
+
+- name: adoption for an unknown cookbook
+  method: POST
+  path: /cookbooks/nope/adoption
+  login: grace
+  reset: true
+  csrf: true
+
+- name: collaborator search as guest
+  method: GET
+  path: /collaborators?q=gr
+  reset: true
+
+- name: collaborator search
+  method: GET
+  path: /collaborators?q=gr
+  login: ada
+  reset: true
+
+- name: collaborator search excludes ineligible ids
+  method: GET
+  path: /collaborators?ineligible_user_ids%5B%5D=1
+  login: ada
+  reset: true
+
+- name: add a collaborator as owner
+  method: POST
+  path: /collaborators
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: collaborator%5Bresourceable_type%5D=Cookbook&collaborator%5Bresourceable_id%5D=2&collaborator%5Buser_ids%5D=2
+
+- name: add an existing collaborator as owner
+  method: POST
+  path: /collaborators
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: collaborator%5Bresourceable_type%5D=Cookbook&collaborator%5Bresourceable_id%5D=1&collaborator%5Buser_ids%5D=2
+
+- name: add a collaborator as a non owner
+  method: POST
+  path: /collaborators
+  login: grace
+  reset: true
+  csrf: true
+  body: collaborator%5Bresourceable_type%5D=Cookbook&collaborator%5Bresourceable_id%5D=2&collaborator%5Buser_ids%5D=2
+
+- name: add a collaborator as guest
+  method: POST
+  path: /collaborators
+  reset: true
+  csrf: true
+  body: collaborator%5Bresourceable_type%5D=Cookbook&collaborator%5Bresourceable_id%5D=2&collaborator%5Buser_ids%5D=2
+
+- name: add a collaborator to a missing resource
+  method: POST
+  path: /collaborators
+  login: ada
+  reset: true
+  csrf: true
+  body: collaborator%5Bresourceable_type%5D=Cookbook&collaborator%5Bresourceable_id%5D=999&collaborator%5Buser_ids%5D=2
+
+- name: remove a collaborator as owner
+  method: DELETE
+  path: /collaborators/1
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+
+- name: remove myself as collaborator
+  method: DELETE
+  path: /collaborators/1
+  login: grace
+  reset: true
+  csrf: true
+  observe: [jobs]
+
+- name: remove a collaborator as an outsider
+  method: DELETE
+  path: /collaborators/1
+  login: alan-gh
+  reset: true
+  csrf: true
+
+- name: remove an unknown collaborator
+  method: DELETE
+  path: /collaborators/999
+  login: ada
+  reset: true
+  csrf: true
+
+- name: transfer between collaborators
+  method: PUT
+  path: /collaborators/1/transfer
+  login: ada
+  reset: true
+  csrf: true
+
+- name: transfer between collaborators as an outsider
+  method: PUT
+  path: /collaborators/1/transfer
+  login: alan-gh
+  reset: true
+  csrf: true
+
+- name: transfer ownership to a non collaborator as admin
+  method: PUT
+  path: /cookbooks/redisio/transfer_ownership
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: cookbook%5Buser_id%5D=2
+
+- name: transfer ownership to a collaborator as owner
+  method: PUT
+  path: /cookbooks/redis/transfer_ownership
+  login: ada
+  reset: true
+  csrf: true
+  observe: [jobs]
+  body: cookbook%5Buser_id%5D=2&cookbook%5Badd_owner_as_collaborator%5D=1
+
+- name: transfer ownership as guest
+  method: PUT
+  path: /cookbooks/redis/transfer_ownership
+  reset: true
+  csrf: true
+  body: cookbook%5Buser_id%5D=2
+
+- name: accept an ownership transfer
+  method: GET
+  path: /ownership_transfer/aaaa1111222233334444555566667777/accept
+  login: grace
+  reset: true
+
+- name: decline an ownership transfer
+  method: GET
+  path: /ownership_transfer/bbbb1111222233334444555566667777/decline
+  login: ada
+  reset: true
+
+- name: accept an unknown transfer token
+  method: GET
+  path: /ownership_transfer/nope/accept
+  reset: true
+
+- name: profile edit as guest
+  method: GET
+  path: /profile/edit
+  reset: true
+
+- name: profile edit signed in
+  method: GET
+  path: /profile/edit
+  login: ada
+  reset: true
+
+- name: update the profile
+  method: PATCH
+  path: /profile
+  login: ada
+  reset: true
+  csrf: true
+  body: user%5Bcompany%5D=Analytical+Engines&user%5Btwitter_username%5D=ada
+
+- name: update the profile without an email
+  method: PATCH
+  path: /profile
+  login: ada
+  reset: true
+  csrf: true
+  body: user%5Bemail%5D=&user%5Bcompany%5D=Analytical+Engines
+
+- name: update the profile as guest
+  method: PATCH
+  path: /profile
+  reset: true
+  csrf: true
+  body: user%5Bcompany%5D=x
+
+- name: update the install preference
+  method: POST
+  path: /profile/update_install_preference
+  login: ada
+  reset: true
+  csrf: true
+  body: preference=berkshelf
+
+- name: update the install preference as guest
+  method: POST
+  path: /profile/update_install_preference
+  reset: true
+  csrf: true
+  body: preference=berkshelf

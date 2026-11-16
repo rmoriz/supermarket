@@ -1,0 +1,7 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}irc_logs{% endblock %}
+{% block content %}<div class="page nobg">
+  <h1 class="title">#{{ channel }}</h1>
+  <pre class="chat-log">{{ body }}</pre>
+</div>
+{% endblock %}

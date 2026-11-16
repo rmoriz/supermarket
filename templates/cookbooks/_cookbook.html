@@ -1,0 +1,83 @@
+<li itemscope itemtype="http://schema.org/Code">
+  <div class="header">
+    <div class="header-content">
+      <h2 class="title">
+        <a rel="cookbook" itemprop="name" href="/cookbooks/{{ cookbook.name }}">{{ cookbook.name }}</a>
+        <i class="fa fa-file"></i>
+        <small>{{ cookbook.latest_version }}</small>
+      </h2>
+      <span class="meta">
+        {% if fieri %}
+        <span class="has-tip" title="{{ quality_tip }}">
+        <i class="fa fa-dashboard"></i> {{ cookbook.pass_rate }}%
+        </span>
+        {% endif %}
+        <i class="fa fa-clock-o"></i> Updated <span itemprop="dateModified">{{ cookbook.updated_at }}</span><br />
+      </span>
+
+      {% if cookbook.deprecated %}
+        <span class="meta">
+          {% if let Some(replacement) = cookbook.replacement %}
+            <i class="fa fa-exclamation-triangle"></i> Deprecated in favor of <a href="/cookbooks/{{ replacement }}">{{ replacement }}</a>
+          {% else %}
+            <i class="fa fa-exclamation-triangle"></i> Deprecated
+          {% endif %}
+        </span>
+      {% endif %}
+
+      <div class="owner">
+        <a href="/users/{{ cookbook.owner_username }}">
+          {{ cookbook.owner_avatar|safe }}
+          <h5 itemprop="author">{{ cookbook.maintainer }}</h5>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="body-content">
+      <p itemprop="description">
+        {{ cookbook.description }}
+      </p>
+      <code class="install">cookbook '{{ cookbook.name }}', '~&gt; {{ cookbook.latest_version }}'</code>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="bottom-content">
+      <div class="cookbook_platforms_content show-for-medium-up">
+        <h5>Supported Platforms</h5>
+        <ul class="cookbook_platforms">
+          {% if !cookbook.platforms.is_empty() %}
+            {% for platform in cookbook.platforms %}
+              <li class="cookbook_platform_icon">
+                <img alt="{{ platform.name }} {{ platform.constraint }}" title="{{ platform.name }} {{ platform.constraint }}" height="16" width="16" class="fa" src="{{ platform.icon }}" />
+              </li>
+            {% endfor %}
+          {% else %}
+            <li data-tooltip class="has-tip cookbook_no_platform_icon" title="Not specified">
+              <span class="fa fa-question-circle"></span>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      {% if cookbook.partner %}
+      <div class="cookbook_badges_content show_for_medium_up">
+        <h5>Badges</h5>
+        <ul class="cookbook_badges">
+        {% if cookbook.partner %}
+        <li class="cookbook_badge_icon has-tip" title=""/>
+          <a href="https://github.com/chef-partners/cookbook-guide/blob/master/cookbook-guide.pdf" target="new">
+            <img alt="Partner Cookbook" title="Partner Cookbook" height="16" width="16" id="partner_badge" class="fa" src="{{ partner_badge }}" />
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+      </div>
+      {% endif %}
+
+      <ul class="cookbook_stats">
+        {% include "cookbooks/_follow_button_list.html" %}
+      </ul>
+    </div>
+  </div>
+</li>

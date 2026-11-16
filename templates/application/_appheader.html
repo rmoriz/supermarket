@@ -1,0 +1,26 @@
+<nav class="appnav">
+  <ul class="mainnav hide-for-medium-down">
+    <li><a data-hover="Cookbooks" rel="cookbooks" href="/cookbooks-directory">Cookbooks</a></li>
+    {% if shell.tools %}
+      <li><a href="/tools-directory">Tools &amp; Plugins</a></li>
+    {% endif %}
+    <li class="more-info"><a>More Info</a></li>
+  </ul>
+  <div class="usermenu">
+  {% if let Some(viewer) = shell.viewer %}
+    {{ viewer.gravatar()|safe }}
+    {{ viewer.username }} <i class="fa fa-caret-down"></i>
+    <ul class="userdropdown">
+      <li><a rel="view_profile" href="/users/{{ viewer.username }}"><i class="fa fa-user"></i> View Profile</a></li>
+      <li><a rel="manage_profile" href="/profile/edit"><i class="fa fa-cog"></i> Manage Profile</a></li>
+
+      <li><a rel="sign_out nofollow" data-method="delete" href="/sign-out"><i class="fa fa-power-off"></i> Sign Out</a></li>
+    </ul>
+  {% else %}
+    <ul>
+      <li class="sign_in_create_account"><a href="https://api.chef.io/signup?ref=community">Create Account</a></li>
+      <li class="sign_in_create_account"><a rel="sign_in nofollow" data-method="post" href="/auth/chef_oauth2">Sign In</a></li>
+    </ul>
+  {% endif %}
+  </div>
+</nav>

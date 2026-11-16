@@ -1,0 +1,73 @@
+<form accept-charset="UTF-8" class="search_form" method="get" action="{{ shell.search_path }}">
+  <div class="search_bar">
+    <div class="quick_search">
+      <div class="search_toggle">
+        <a class="button expand large" data-dropdown="search-types" rel="toggle-search-types"><span>{{ shell.search_name }}</span> <i class="fa fa-chevron-down"></i></a>
+
+        <ul id="search-types" data-dropdown-content class="f-dropdown">
+          <li><a href="#" data-url=/cookbooks rel="toggle-cookbook-search">Cookbooks</a></li>
+          <li><a href="#" data-url=/tools rel="toggle-tool-search">Tools</a></li>
+        </ul>
+      </div>
+
+      <div class="search_field">
+        <i class="fa fa-search"></i>
+        <input type="search" name="q" id="q" {% if let Some(q) = shell.q %}value="{{ q }}" {% endif %}placeholder="Search" class="cookbook_search_textfield" />
+      </div>
+
+      {% if let Some(order) = shell.order %}
+        <input type="hidden" name="order" id="order" value="{{ order }}" autocomplete="off" />
+      {% endif %}
+
+      <div class="search_button">
+        <button type="submit" class="cookbook_search_button">GO</button>
+      </div>
+
+      <div class="advanced_search_toggle">
+        <span>Advanced Options <i class="fa fa-chevron-down" id="toggle-arrow"></i><span>
+      </div>
+    </div>
+  </div>
+
+  <div class="advanced_search_body">
+    <h4> Select Badges</h4>
+    <div class="advanced_search_badges" >
+
+      {% for badge in shell.badge_options %}
+        <div class="advanced_search_badge">
+            <label>
+              <input type="checkbox" name="badges[]" id="badges_{{ badge }}" value="{{ badge }}" {% if shell.badge_checked(badge) %}checked="checked"{% endif %} />
+              {{ badge }}
+            </label>
+        </div>
+      {% endfor %}
+    </div>
+
+    <h4> Select Supported Platforms </h4>
+    <div class = "advanced_search_platforms" >
+
+      {% for platform in shell.platform_options %}
+        <div class="advanced_search_platform">
+            <label>
+              <input type="checkbox" name="platforms[]" id="platforms_" value="{{ platform }}" {% if shell.platform_checked(platform) %}checked="checked"{% endif %} />
+              {{ platform }}
+            </label>
+        </div>
+      {% endfor %}
+    </div>
+
+    <h4> Select Status </h4>
+    <div class = "advanced_search_statuses">
+      <div class = "advanced_search_status">
+        <label>
+          <input type="checkbox" name="deprecated" id="deprecated" value="true" {% if shell.deprecated %}checked="checked"{% endif %} />
+          Include deprecated cookbooks
+        </label>
+      </div>
+    </div>
+
+    <div class= "advanced_textfield">
+      <input type="search" name="platforms[]" id="platforms_" placeholder="You can write in a platform name here if it&#39;s not listed above" class="platform_search_textfield" />
+    </div>
+  </div>
+</form>

@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+# Sequential latency probe: p50/p95/max over N requests for one path.
+#
+#   harness/bin/bench "/api/v1/universe" 200
+#
+# Env: RUST_URL (default http://127.0.0.1:3005)
+require "net/http"
+require "uri"
+
+url = URI.join(ENV.fetch("RUST_URL", "http://127.0.0.1:3005"), ARGV[0] || "/api/v1/universe")
+runs = (ARGV[1] || "100").to_i
+
+samples = Array.new(runs) do
+  started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  response = Net::HTTP.start(url.host, url.port, read_timeout: 60) { |http| http.get(url.request_uri) }
+  elapsed = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000
+  raise "status #{response.code}" unless response.code == "200"
+
+  elapsed
+end
+
+samples.sort!
+at = ->(fraction) { samples[[(samples.length * fraction).ceil - 1, 0].max] }
+
+puts format("%-28s n=%d p50=%.1fms p95=%.1fms max=%.1fms", url.request_uri, runs, at.call(0.50), at.call(0.95), samples.last)

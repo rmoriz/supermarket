@@ -1,0 +1,216 @@
+# Phase 7 — fieri, quality metrics, tool CRUD, chat redirects, robots and the
+# password endpoint. Every mutation reseeds both sides first.
+- name: robots txt
+  method: GET
+  path: /robots.txt
+- name: robots without extension
+  method: GET
+  path: /robots
+- name: robots with extension fallback
+  method: GET
+  path: /robots.json
+
+- name: chat index
+  method: GET
+  path: /chat
+- name: chat channel
+  method: GET
+  path: /chat/chef
+- name: chat old date
+  method: GET
+  path: /chat/chef/2013-08-07
+- name: chat cutoff date
+  method: GET
+  path: /chat/chef/2013-08-08
+- name: chat new date
+  method: GET
+  path: /chat/chef/2014-09-24
+- name: chat unparsable date
+  method: GET
+  path: /chat/chef/nope
+
+- name: change password
+  method: PATCH
+  path: /profile/change_password
+  login: ada
+  csrf: true
+  reset: true
+
+- name: fieri missing key
+  method: POST
+  path: /fieri/jobs
+  body: "cookbook[name]=redis&cookbook[version]=1.0.0&cookbook[artifact_url]=http://x/y"
+- name: fieri wrong key
+  method: POST
+  path: /fieri/jobs
+  body: "fieri_key=nope&cookbook[name]=redis&cookbook[version]=1.0.0&cookbook[artifact_url]=http://x/y"
+- name: fieri missing cookbook
+  method: POST
+  path: /fieri/jobs
+  body: "fieri_key=YOUR_FIERI_KEY"
+- name: fieri missing name
+  method: POST
+  path: /fieri/jobs
+  body: "fieri_key=YOUR_FIERI_KEY&cookbook[version]=1.0.0&cookbook[artifact_url]=http://x/y"
+- name: fieri missing version
+  method: POST
+  path: /fieri/jobs
+  body: "fieri_key=YOUR_FIERI_KEY&cookbook[name]=redis&cookbook[artifact_url]=http://x/y"
+- name: fieri missing artifact
+  method: POST
+  path: /fieri/jobs
+  body: "fieri_key=YOUR_FIERI_KEY&cookbook[name]=redis&cookbook[version]=1.0.0"
+- name: fieri success enqueues
+  method: POST
+  path: /fieri/jobs
+  reset: true
+  observe: [jobs]
+  body: "fieri_key=YOUR_FIERI_KEY&cookbook[name]=redis&cookbook[version]=1.0.0&cookbook[artifact_url]=http://x/y"
+- name: fieri status
+  method: GET
+  path: /fieri/status
+
+- name: quality metrics missing cookbook
+  method: POST
+  path: /api/v1/quality_metrics/cookstyle_evaluation
+  body: "fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics wrong key
+  method: POST
+  path: /api/v1/quality_metrics/cookstyle_evaluation
+  body: "cookbook_name=redis&fieri_key=nope"
+- name: quality metrics unknown cookbook
+  method: POST
+  path: /api/v1/quality_metrics/cookstyle_evaluation
+  body: "cookbook_name=nope&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics missing version
+  method: POST
+  path: /api/v1/quality_metrics/cookstyle_evaluation
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics cookstyle
+  method: POST
+  path: /api/v1/quality_metrics/cookstyle_evaluation
+  reset: true
+  body: "cookbook_name=redis&cookbook_version=1.0.0&cookstyle_failure=true&cookstyle_feedback=bad&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics cookstyle latest
+  method: POST
+  path: /api/v1/cookbook-versions/cookstyle_evaluation
+  reset: true
+  body: "cookbook_name=redis&cookstyle_failure=false&cookstyle_feedback=ok&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics collaborators
+  method: POST
+  path: /api/v1/quality_metrics/collaborators_evaluation
+  reset: true
+  body: "cookbook_name=redis&cookbook_version=1.0.0&collaborator_failure=false&collaborator_feedback=ok&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics contributing
+  method: POST
+  path: /api/v1/quality_metrics/contributing_file_evaluation
+  reset: true
+  body: "cookbook_name=redis&contributing_file_failure=false&contributing_file_feedback=ok&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics testing
+  method: POST
+  path: /api/v1/quality_metrics/testing_file_evaluation
+  reset: true
+  body: "cookbook_name=redis&testing_file_failure=true&testing_file_feedback=none&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics version tag
+  method: POST
+  path: /api/v1/quality_metrics/version_tag_evaluation
+  reset: true
+  body: "cookbook_name=redis&cookbook_version=1.0.0&version_tag_failure=true&version_tag_feedback=none&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics no binaries
+  method: POST
+  path: /api/v1/quality_metrics/no_binaries_evaluation
+  reset: true
+  body: "cookbook_name=redis&cookbook_version=1.0.0&no_binaries_failure=false&no_binaries_feedback=ok&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics publish is missing
+  method: POST
+  path: /api/v1/quality_metrics/publish_evaluation
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+- name: quality metrics supported platforms is missing
+  method: POST
+  path: /api/v1/quality_metrics/supported_platforms_evaluation
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+- name: cookbook versions publish
+  method: POST
+  path: /api/v1/cookbook-versions/publish_evaluation
+  reset: true
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+- name: cookbook versions supported platforms
+  method: POST
+  path: /api/v1/cookbook-versions/supported_platforms_evaluation
+  reset: true
+  body: "cookbook_name=redis&fieri_key=YOUR_FIERI_KEY"
+
+- name: tools index atom
+  method: GET
+  path: /tools.atom
+- name: tools index atom filtered
+  method: GET
+  path: /tools.atom?type=knife_plugin&q=thing&page=2
+- name: tools directory guest
+  method: GET
+  path: /tools-directory
+- name: tools directory signed in
+  method: GET
+  path: /tools-directory
+  login: ada
+- name: tools new as guest
+  method: GET
+  path: /tools/new
+- name: tool create as guest
+  method: POST
+  path: /tools
+  body: "tool[name]=x&tool[slug]=x&tool[type]=knife_plugin"
+- name: tool create invalid
+  method: POST
+  path: /tools
+  login: ada
+  csrf: true
+  reset: true
+  body: "tool[name]=Knife-Thing&tool[slug]=bad slug&tool[type]=bogus&tool[source_url]=nope"
+- name: tool create success
+  method: POST
+  path: /tools
+  login: ada
+  csrf: true
+  reset: true
+  body: "tool[name]=My%20Tool&tool[type]=knife_plugin"
+- name: tool update invalid
+  method: PATCH
+  path: /tools/knife-thing
+  login: ada
+  csrf: true
+  reset: true
+  body: "tool[name]=&tool[slug]=bad%20slug&tool[type]=bogus&tool[source_url]=nope"
+- name: tool update adoption up
+  method: PATCH
+  path: /tools/knife-thing
+  login: ada
+  csrf: true
+  reset: true
+  body: "tool[name]=knife-thing&tool[slug]=knife-thing&tool[type]=knife_plugin&tool[up_for_adoption]=true"
+- name: tool update as stranger
+  method: PATCH
+  path: /tools/knife-thing
+  login: grace
+  csrf: true
+  reset: true
+  body: "tool[name]=x&tool[slug]=x&tool[type]=knife_plugin"
+- name: tool adoption as stranger
+  method: POST
+  path: /tools/knife-thing/adoption
+  login: grace
+  csrf: true
+  reset: true
+  observe: [jobs]
+- name: tool destroy as stranger
+  method: DELETE
+  path: /tools/knife-thing
+  login: grace
+  csrf: true
+  reset: true
+- name: tool destroy as owner
+  method: DELETE
+  path: /tools/knife-thing
+  login: ada
+  csrf: true
+  reset: true

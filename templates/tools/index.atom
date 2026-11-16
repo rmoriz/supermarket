@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
+  <id>tag:{{ host }},2005:/tools</id>
+  <link rel="alternate" type="text/html" href="{{ base }}"/>
+  <link rel="self" type="application/atom+xml" href="{{ base }}{{ self_url }}"/>
+  <title>Tools &amp; Plugins</title>
+  <updated>{{ updated }}</updated>
+{% for entry in entries %}  <entry>
+    <id>tag:{{ host }},2005:Tool/{{ entry.id }}</id>
+    <published>{{ entry.published }}</published>
+    <updated>{{ entry.updated }}</updated>
+    <link rel="alternate" type="text/html" href="{{ base }}/tools/{{ entry.slug }}"/>
+    <title>{{ entry.name }}</title>
+    <content>{{ entry.content }}</content>
+    <author>
+      <name>{{ entry.maintainer }}</name>
+      <uri>{{ base }}/users/{{ entry.owner }}</uri>
+    </author>
+  </entry>
+{% endfor %}</feed>

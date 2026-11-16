@@ -1,0 +1,278 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Cross-language job gate: the oracle *produces* the Sidekiq payloads, the Rust
+# worker consumes them, and both sides' DB effects and delivered mail are
+# diffed. Rails executes the same payloads through its own worker classes.
+#
+#   ./harness/bin/jobs
+#
+# Env: DATABASE_URL, REDIS_URL (Rust side, DB 1), MAIL_CAPTURE_DIR.
+
+require 'json'
+require 'open3'
+require 'tmpdir'
+require 'fileutils'
+
+ROOT = File.expand_path('../..', __dir__)
+CONTAINER = 'harness-oracle-1'
+BASE = ENV.fetch('HARNESS_BASE_URL', 'http://localhost:3005')
+DATABASE = ENV.fetch('DATABASE_URL', 'postgres://supermarket:supermarket@localhost:55432/supermarket_test')
+MAIL_DIR = Dir.mktmpdir('job-mails')
+
+SNAPSHOT = {
+  'cookbook_followers' => 'SELECT cookbook_id, user_id FROM cookbook_followers ORDER BY cookbook_id, user_id',
+  'collaborators' => 'SELECT resourceable_id, resourceable_type, user_id FROM collaborators ORDER BY resourceable_id, resourceable_type, user_id',
+  'cookbook_versions' => 'SELECT id, spdx_license_url FROM cookbook_versions ORDER BY id',
+  'cookbooks' => 'SELECT id, deprecated, replacement_id, deprecation_reason, up_for_adoption FROM cookbooks ORDER BY id',
+  'accounts' => 'SELECT id, oauth_token, oauth_refresh_token FROM accounts ORDER BY id'
+}.freeze
+
+SCENARIOS = [
+  {
+    name: 'notify follower of a new version',
+    enqueue: 'CookbookNotifyWorker.perform_async(2)',
+    expect: 1
+  },
+  {
+    name: 'notify collaborator of a new version',
+    enqueue: 'CookbookNotifyWorker.perform_async(3)',
+    expect: 1
+  },
+  {
+    name: 'delete a cookbook with followers and collaborators',
+    enqueue: 'CookbookDeletionWorker.perform_async(Cookbook.find(1).as_json)',
+    expect: 1
+  },
+  {
+    name: 'deprecate a cookbook for its owner and subscribers',
+    enqueue: 'CookbookDeprecatedNotifier.perform_async(1)',
+    expect: 1
+  },
+  {
+    name: 'deprecate a cookbook with a replacement',
+    enqueue: 'CookbookDeprecatedNotifier.perform_async(3)',
+    expect: 1
+  },
+  {
+    name: 'update an SPDX licence URL',
+    enqueue: <<~RUBY,
+      SpdxLicenseUpdateWorker.perform_async(
+        [{ 'licenseId' => 'Apache-2.0', 'detailsUrl' => 'https://spdx.test/Apache-2.0' },
+         { 'licenseId' => 'MIT', 'detailsUrl' => 'https://spdx.test/MIT' }], 1
+      )
+    RUBY
+    expect: 0
+  },
+  {
+    name: 'SPDX licence with no match',
+    enqueue: "SpdxLicenseUpdateWorker.perform_async([{ 'licenseId' => 'MIT' }], 1)",
+    expect: 0
+  },
+  {
+    name: 'delayed collaborator mail',
+    enqueue: 'CollaboratorMailer.delay.added_email(Collaborator.first)',
+    expect: 1
+  },
+  {
+    name: 'delayed cookbook deleted mail',
+    enqueue: "CookbookMailer.delay.cookbook_deleted_email('redis', User.find(1))",
+    expect: 1
+  },
+  {
+    name: 'delayed transfer ownership mail',
+    enqueue: 'CookbookMailer.delay.transfer_ownership_email(OwnershipTransferRequest.first.id)',
+    expect: 1
+  },
+  {
+    name: 'delayed adoption interest mail',
+    enqueue: "AdoptionMailer.delay.interest_email(Cookbook.find(1).id, 'Cookbook', User.find(2).id)",
+    expect: 1
+  },
+  {
+    name: 'delayed adoption follower mail',
+    enqueue: "AdoptionMailer.delay.follower_email(Cookbook.find(1).id, 'Cookbook')",
+    expect: 1
+  }
+].freeze
+
+PRODUCER = <<~'RUBY'
+  require 'json'
+  before = Sidekiq::Queue.new('default').size
+  __ENQUEUE__
+  after = Sidekiq::Queue.new('default').size
+  jobs = Sidekiq::Queue.new('default').map { |job| job.item }
+  File.write(ENV.fetch('JOBS_OUT'), JSON.pretty_generate(jobs))
+  puts "#{after - before} enqueued"
+RUBY
+
+CONSUMER = <<~'RUBY'
+  require 'json'
+  # Capture the freshly rendered message. Reading it after delivery would
+  # return the CRLF-encoded body with re-serialized markup.
+  class JobCapture
+    def self.mails
+      @mails ||= []
+    end
+
+    def self.record(mail)
+      mails << {
+        'to' => Array(mail.to).join(','),
+        'subject' => mail.subject.to_s,
+        'text' => mail.text_part&.body&.to_s,
+        'html' => mail.html_part&.body&.to_s
+      }
+    end
+  end
+  module CaptureDelivery
+    def deliver_now
+      JobCapture.record(message)
+      message
+    end
+  end
+  ActionMailer::MessageDelivery.prepend(CaptureDelivery)
+
+  payloads = JSON.parse(File.read(ENV.fetch('JOBS_OUT')))
+  payloads.each do |job|
+    case job['class']
+    when 'Sidekiq::Extensions::DelayedMailer'
+      Sidekiq::Extensions::DelayedMailer.new.perform(job['args'].first)
+    else
+      job['class'].constantize.new.perform(*job['args'])
+    end
+  end
+
+  File.write(ENV.fetch('MAILS_OUT'), JSON.pretty_generate(JobCapture.mails.sort_by { |m| [m['to'].to_s, m['subject'].to_s] }))
+
+  snapshot = {}
+  __SNAPSHOT__.each do |table, sql|
+    rows = ActiveRecord::Base.connection.select_all(sql).to_a
+    snapshot[table] = rows.map { |row| row.sort.to_h }
+  end
+  File.write(ENV.fetch('SNAPSHOT_OUT'), JSON.pretty_generate(snapshot))
+RUBY
+
+def reseed
+  system(File.join(ROOT, 'harness/bin/seed'), out: File::NULL) || abort('seed failed')
+end
+
+# Rows of `sql` as a JSON array (psql prints the single aggregate column).
+def psql(sql)
+  wrapped = "SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json) FROM (#{sql}) t"
+  JSON.parse(`docker exec harness-postgres-1 psql -U supermarket -d supermarket_test -tAc #{wrapped.dump}`)
+end
+
+def redis(db, *args)
+  `docker exec harness-redis-1 redis-cli -n #{db} #{args.join(' ')}`.strip
+end
+
+# `-x` reads the value from stdin, so payloads with quotes need no shell
+# escaping.
+def redis_push(db, key, value)
+  IO.popen(['docker', 'exec', '-i', 'harness-redis-1', 'redis-cli', '-n', db.to_s, '-x', 'rpush', key],
+           'w', out: File::NULL) { |io| io.write(value) }
+end
+
+def rails_run(script, env = [])
+  local = File.join(Dir.tmpdir, 'job-script.rb')
+  File.write(local, script)
+  `docker cp #{local} #{CONTAINER}:/tmp/job-script.rb`
+  out = `docker exec #{env.join(' ')} #{CONTAINER} bin/rails runner /tmp/job-script.rb 2>&1`
+  [out, $?.success?]
+end
+
+def read_container(path)
+  local = File.join(Dir.tmpdir, "job-#{File.basename(path)}")
+  `docker cp #{CONTAINER}:#{path} #{local}`
+  JSON.parse(File.read(local))
+end
+
+def snapshot_rust(payloads)
+  redis(1, 'del', 'queue:default')
+  payloads.each { |p| redis_push(1, 'queue:default', p.to_json) }
+  FileUtils.rm_f(Dir[File.join(MAIL_DIR, '*.json')])
+  env = {
+    'RAILS_ENV' => 'test', 'DATABASE_URL' => DATABASE,
+    'REDIS_URL' => ENV.fetch('REDIS_URL', 'redis://localhost:56379/1'),
+    'SECRET_KEY_BASE' => ENV.fetch('SECRET_KEY_BASE', 'oracle-secret-key-base-oracle-secret-key-base-0000'),
+    'FQDN' => 'localhost', 'PORT' => '3005', 'PROTOCOL' => 'http',
+    'MAIL_CAPTURE_DIR' => MAIL_DIR, 'WORKER_ONCE' => '1'
+  }
+  out, status = Open3.capture2e(env, File.join(ROOT, 'target/debug/supermarket-worker'))
+  abort("rust worker failed:\n#{out}") unless status.success?
+  mails = Dir[File.join(MAIL_DIR, '*.json')].sort.map { |f| JSON.parse(File.read(f)) }
+  snapshot = SNAPSHOT.transform_values { |sql| psql(sql) }
+  [mails, snapshot]
+end
+
+failures = 0
+selected = SCENARIOS.select { |s| !ENV['ONLY'] || s[:name].include?(ENV['ONLY']) }
+selected.each do |scenario|
+  producer = PRODUCER.sub('__ENQUEUE__', scenario[:enqueue])
+
+  reseed
+  redis(0, 'del', 'queue:default')
+  out, ok = rails_run(producer, ['-e', 'JOBS_OUT=/tmp/jobs.json'])
+  abort("rails producer failed for #{scenario[:name]}:\n#{out}") unless ok
+
+  payloads = read_container('/tmp/jobs.json')
+
+  reseed
+  File.write('/tmp/jobs.json', JSON.pretty_generate(payloads))
+  `docker cp /tmp/jobs.json #{CONTAINER}:/tmp/jobs.json`
+  rails_mails, rails_snapshot = begin
+    out, ok = rails_run(CONSUMER.sub('__SNAPSHOT__', SNAPSHOT.inspect),
+                        ['-e', 'JOBS_OUT=/tmp/jobs.json', '-e', 'MAILS_OUT=/tmp/mails.json',
+                         '-e', 'SNAPSHOT_OUT=/tmp/snapshot.json'])
+    abort("rails consumer failed for #{scenario[:name]}:\n#{out}") unless ok
+    [read_container('/tmp/mails.json'), read_container('/tmp/snapshot.json')]
+  end
+
+  reseed
+  rust_mails, rust_snapshot = snapshot_rust(payloads)
+
+  problems = []
+  problems << "mail count #{rust_mails.size} != #{rails_mails.size}" if rust_mails.size != rails_mails.size
+  order = ->(mail) { [mail['to'].to_s, mail['subject'].to_s, mail['text'].to_s] }
+  problems << 'mails differ' if rust_mails.sort_by(&order) != rails_mails.sort_by(&order)
+  SNAPSHOT.each_key do |table|
+    problems << "#{table} differ" if rust_snapshot[table] != rails_snapshot[table]
+  end
+
+  if problems.empty?
+    puts "MATCH #{scenario[:name]} (#{payloads.size} payload, #{rust_mails.size} mail)"
+  else
+    failures += 1
+    puts "DIFF #{scenario[:name]}: #{problems.join('; ')}"
+    (rails_mails | rust_mails).each do |mail|
+      next if rails_mails.include?(mail) && rust_mails.include?(mail)
+
+      counterpart = (rust_mails - rails_mails).find { |m| m['subject'] == mail['subject'] } ||
+                    (rails_mails - rust_mails).find { |m| m['subject'] == mail['subject'] }
+      next unless counterpart
+
+      mail.each do |field, value|
+        other = counterpart[field]
+        next if value == other
+
+        a = value.to_s
+        b = other.to_s
+        at = (0...[a.size, b.size].min).find { |i| a[i] != b[i] } || [a.size, b.size].min
+        puts "  #{field} differs at #{at}"
+        puts "    rails=#{a[[at - 60, 0].max, 160].inspect}"
+        puts "    rust =#{b[[at - 60, 0].max, 160].inspect}"
+      end
+    end
+    puts "  rails mails: #{rails_mails.map { |m| m['to'] }.inspect} rust mails: #{rust_mails.map { |m| m['to'] }.inspect}"
+    SNAPSHOT.each_key do |table|
+      next if rust_snapshot[table] == rails_snapshot[table]
+
+      puts "  #{table} rails: #{JSON.dump(rails_snapshot[table])[0, 400]}"
+      puts "  #{table} rust:  #{JSON.dump(rust_snapshot[table])[0, 400]}"
+    end
+  end
+end
+
+puts "#{selected.size - failures}/#{selected.size} MATCH"
+FileUtils.rm_rf(MAIL_DIR)
+exit(failures.zero? ? 0 : 1)

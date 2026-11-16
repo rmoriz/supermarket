@@ -1,0 +1,6 @@
+[general]
+dirs = ["templates"]
+
+[[escaper]]
+extensions = ["html"]
+path = "crate::web::escape::Rails"

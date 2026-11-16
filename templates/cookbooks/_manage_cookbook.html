@@ -1,0 +1,106 @@
+<a href="#" data-dropdown="manage" class="button radius secondary small dropdown">Manage Cookbook</a>
+
+<ul class="manage_cookbook f-dropdown" id="manage" data-dropdown-content>
+  {% if create_collaborator %}
+    <li>
+      <a class="addcontributor" rel="add-collaborator" data-reveal-id="collaborators" href="#">
+        <i class="fa fa-plus-square"></i>
+        Add Collaborator
+      </a>
+    </li>
+    <div id="collaborators" class="reveal-modal small" data-reveal>
+      {% include "collaborators/_add.html" %}
+    </div>
+  {% endif %}
+
+  {% if adoption_available %}
+    <li>
+      <a class="button radius tiny" rel="adoption" data-method="post" href="/cookbooks/{{ cookbook.name }}/adoption">Adopt me!</a>
+    </li>
+  {% endif %}
+
+  {% if transfer_ownership %}
+    <li>
+      <a rel="transfer_ownership" data-reveal-id="transfer" href="#">
+        <i class="fa fa-random"></i>
+        Transfer Ownership
+      </a>
+    </li>
+
+    <div id="transfer" class="reveal-modal small" data-reveal>
+      <h1>Transfer Ownership</h1>
+      <a class="close-reveal-modal">&#215;</a>
+
+      <form class="edit_cookbook" action="/cookbooks/{{ cookbook.name }}/transfer_ownership" accept-charset="UTF-8" method="post">
+        <input type="hidden" name="_method" value="put" />
+        <div class="row collapse">
+          <div class="small-9 columns">
+            <input type="hidden" name="cookbook[user_id]" id="cookbook_user_id" class="collaborators" data-url="/collaborators?ineligible_user_ids={{ cookbook.owner_id }}" />
+            <h3>
+              <input type="hidden" name="cookbook[add_owner_as_collaborator]" value="0" />
+              <input type="checkbox" value="1" name="cookbook[add_owner_as_collaborator]" id="cookbook_add_owner_as_collaborator" />
+              <label for="cookbook_add_owner_as_collaborator">Make current owner a collaborator?</label>
+            </h3>
+          </div>
+          <div class="small-3 columns">
+            <input type="submit" name="commit" value="Transfer" class="button radius postfix" />
+          </div>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if deprecate %}
+    <li>
+      <a class="deprecate" rel="deprecate" data-reveal-id="deprecate" href="#">
+        <i class="fa fa-archive"></i>
+        Deprecate
+      </a>
+    </li>
+
+    <div id="deprecate" class="reveal-modal small" data-reveal>
+      <h1>Deprecate Cookbook</h1>
+
+      <p>Deprecating the {{ cookbook.name }} cookbook will add a notice to the
+      page letting visitors know the cookbook has been deprecated and its use is
+      no longer recommended.  Optionally, select a cookbook that should be used
+      instead of this one.</p>
+
+      <a class="close-reveal-modal">&#215;</a>
+
+      <form class="edit_cookbook" action="/cookbooks/{{ cookbook.name }}/deprecate" accept-charset="UTF-8" method="post">
+        <input type="hidden" name="_method" value="put" />
+        <div class="row collapse">
+          <div class="small-12 columns">
+            <input type="hidden" name="cookbook[replacement]" id="cookbook_replacement" class="cookbook-deprecate" data-url="/cookbooks/{{ cookbook.name }}/deprecate_search" />
+          </div>
+          <div class="small-12 columns">
+            <label for="cookbook_deprecation_reason">Deprecation reason</label>
+            <textarea rows="3" class="form-control" placeholder="Reason of deprecation" name="cookbook[deprecation_reason]" id="cookbook_deprecation_reason">{{ cookbook.deprecation_reason }}</textarea>
+          </div>
+          <div class="medium-3 columns">
+            <input type="submit" name="commit" value="Deprecate" class="button radius postfix submit-deprecation" />
+          </div>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if undeprecate %}
+    <li>
+      <a rel="undeprecate" data-method="delete" href="/cookbooks/{{ cookbook.name }}/deprecate">
+          <i class="fa fa-archive"></i>
+          Undo Deprecation
+      </a>
+    </li>
+  {% endif %}
+
+  {% if toggle_featured %}
+    <li>
+      <a rel="toggle_featured" data-method="put" href="/cookbooks/{{ cookbook.name }}/toggle_featured">
+        <i class="fa fa-star"></i>
+        {% if cookbook.featured %}Unfeature{% else %}Feature{% endif %}
+      </a>
+    </li>
+  {% endif %}
+</ul>

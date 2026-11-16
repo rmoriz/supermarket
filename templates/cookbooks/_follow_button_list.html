@@ -1,0 +1,22 @@
+<li id="{{ cookbook.name }}-follow-count">
+  <i class="fa fa-group"></i>
+  <span itemprop="interactionCount">{{ cookbook.followers }}</span>
+  <h5>{{ cookbook.follower_word }}</h5>
+</li>
+<li id="{{ cookbook.name }}-follow-button">
+  {% if let Some(following) = cookbook.following %}
+    {% if following %}
+      <a rel="unfollow nofollow" class="button radius tiny follow" id="unfollow_cookbook" data-cookbook="{{ cookbook.name }}" data-method="delete" data-remote="true" href="/cookbooks/{{ cookbook.name }}/unfollow?list=true">
+Unfollow
+</a>
+    {% else %}
+      <a rel="follow nofollow" class="button radius tiny follow" id="follow_cookbook" data-cookbook="{{ cookbook.name }}" data-method="put" data-remote="true" href="/cookbooks/{{ cookbook.name }}/follow?list=true">
+Follow
+</a>
+    {% endif %}
+  {% else %}
+    <a rel="sign-in-to-follow nofollow" class="button radius tiny follow" title="You must be signed in to follow a cookbook." data-tooltip="true" data-method="put" href="/cookbooks/{{ cookbook.name }}/follow?list=true">
+      Follow
+</a>
+  {% endif %}
+</li>

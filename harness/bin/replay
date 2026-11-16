@@ -1,0 +1,214 @@
+#!/usr/bin/env ruby
+# Replays a corpus against the Rails oracle and the Rust port, writing one JSON line
+# per entry with both normalized responses and a MATCH/DIFF verdict.
+#
+#   harness/bin/replay harness/corpus/smoke.yml > /tmp/replay.jsonl
+#   harness/bin/diff /tmp/replay.jsonl
+#
+# Entry keys beyond method/path/headers/body:
+#   multipart: { "cookbook" => {"value" => "{}"}, "tarball" => {"file" => "path"} }
+#   sign: <username>   — signs the request with the committed harness key
+#   reset: true        — re-seeds both sides before each side runs
+#   observe: [jobs, cache] — after the request, record the Sidekiq `default`
+#                      queue payloads and whether the `*-universe` keys were
+#                      flushed (each side has its own Redis DB).
+#
+# Env: RAILS_URL (default http://127.0.0.1:3001), RUST_URL (default http://127.0.0.1:3000)
+require "cgi"
+require "json"
+require "net/http"
+require "openssl"
+require "psych"
+require "securerandom"
+require "uri"
+require "active_support"
+require "active_support/key_generator"
+require "active_support/message_encryptor"
+require_relative "../normalize"
+
+RAILS = ENV.fetch("RAILS_URL", "http://127.0.0.1:3001")
+RUST = ENV.fetch("RUST_URL", "http://127.0.0.1:3000")
+KEY = OpenSSL::PKey::RSA.new(File.read(File.expand_path("../fixtures/signing_key.pem", __dir__)))
+
+# Minting a session cookie the way Rails would, so signed-in pages can be
+# compared without walking the OAuth flow.
+SECRET = ENV.fetch("SECRET_KEY_BASE", "oracle-secret-key-base-oracle-secret-key-base-0000")
+COOKIE = "_supermarket_session"
+
+def session_cookie(user_id)
+  key = ActiveSupport::KeyGenerator.new(SECRET, iterations: 1000, hash_digest_class: OpenSSL::Digest::SHA256)
+    .generate_key("authenticated encrypted cookie", 32)
+  encryptor = ActiveSupport::MessageEncryptor.new(key, cipher: "aes-256-gcm", serializer: JSON)
+  # Rails keeps the CSRF secret in `_csrf_token` (base64 of 32 bytes); without
+  # it every request would mint a new token and the extracted one would be
+  # rejected.
+  session = {
+    "user_id" => user_id,
+    "_csrf_token" => SecureRandom.base64(32),
+    "session_id" => SecureRandom.hex(16),
+  }
+  encoded = encryptor.encrypt_and_sign(session, purpose: "cookie.#{COOKIE}")
+  "#{COOKIE}=#{CGI.escape(encoded)}"
+end
+
+def user_id(username)
+  sql = "SELECT id FROM accounts WHERE username = '#{username}' AND provider = 'chef_oauth2' LIMIT 1"
+  url = ENV.fetch("DATABASE_URL", "postgres://supermarket:supermarket@localhost:55432/supermarket_test")
+  out =
+    if system("command -v psql > /dev/null 2>&1")
+      `psql #{url} -tAc #{sql.dump}`
+    else
+      `docker exec harness-postgres-1 psql -U supermarket -d supermarket_test -tAc #{sql.dump}`
+    end
+  Integer(out.strip)
+end
+
+def multipart(entry)
+  boundary = "----harness#{SecureRandom.hex(8)}"
+  file_bytes = nil
+  body = +""
+  entry.fetch("multipart").each do |name, part|
+    body << "--#{boundary}\r\n"
+    if part["file"]
+      bytes = File.binread(File.expand_path(part["file"], __dir__ + "/.."))
+      file_bytes = bytes if name == "tarball"
+      body << %(Content-Disposition: form-data; name="#{name}"; filename="#{File.basename(part['file'])}"\r\n)
+      body << "Content-Type: application/gzip\r\n\r\n#{bytes}\r\n"
+    else
+      body << %(Content-Disposition: form-data; name="#{name}"\r\n\r\n#{part['value']}\r\n)
+    end
+  end
+  body << "--#{boundary}--\r\n"
+  [body, "multipart/form-data; boundary=#{boundary}", file_bytes]
+end
+
+def sign(entry, method, path, body, file, content_type)
+  signature = Mixlib::Authentication::SignedHeaderAuth.signing_object(
+    http_method: method, path: path, body: file || body, timestamp: Time.now.utc.iso8601,
+    user_id: entry.fetch("sign")
+  ).sign(KEY, "sha1", "1.0")
+  headers = signature.merge("X-Ops-Userid" => entry.fetch("sign"), "Host" => "localhost:3005")
+  headers["Content-Type"] = content_type if content_type
+  headers
+end
+
+# Rails verifies the form authenticity token for every unsafe verb. Mint a
+# masked token from the session's own CSRF secret, exactly as a form would
+# carry it (a signed-in page is fetched to get one).
+def csrf_token(base, cookie)
+  uri = URI.join(base, "/")
+  5.times do
+    request = Net::HTTP::Get.new(uri)
+    request["Cookie"] = cookie
+    response = Net::HTTP.start(uri.host, uri.port, read_timeout: 120) { |http| http.request(request) }
+    body = response.body.to_s
+    match = body[/<meta name="csrf-token" content="([^"]*)"/, 1]
+    return match unless match.nil? || match.empty?
+    location = response["location"]
+    break if location.nil?
+    uri = URI.join(base, location)
+  end
+  abort("no csrf token from #{base}")
+end
+
+def fetch(base, entry)
+  method = entry.fetch("method", "GET").capitalize
+  body = entry["body"]
+  file = nil
+  content_type = entry.dig("headers", "Content-Type")
+  if entry["multipart"]
+    body, content_type, file = multipart(entry)
+  end
+
+  headers = entry.fetch("headers", {}).dup
+  headers["Cookie"] = session_cookie(user_id(entry["login"])) if entry["login"]
+  headers = sign(entry, method.upcase, entry.fetch("path"), body, file, content_type) if entry["sign"]
+  headers["Content-Type"] = content_type if content_type && !entry["sign"]
+  if entry["csrf"]
+    token = csrf_token(base, headers.fetch("Cookie"))
+    headers["X-CSRF-Token"] = token
+    encoded = URI.encode_www_form_component(token)
+    body = [body, "authenticity_token=#{encoded}"].compact.reject(&:empty?).join("&")
+    headers["Content-Type"] ||= "application/x-www-form-urlencoded"
+  end
+
+  uri = URI.join(base, entry.fetch("path"))
+  request = Net::HTTP.const_get(method).new(uri)
+  headers.each { |name, value| request[name] = value }
+  request.body = body if body
+  response = Net::HTTP.start(uri.host, uri.port, read_timeout: 120) { |http| http.request(request) }
+  headers = response.each_header.to_h { |name, value| [name, value] }
+  { status: response.code.to_i, headers: headers, raw_body: response.body }
+end
+
+def reseed
+  system(File.expand_path("seed", __dir__), out: File::NULL) || abort("seed failed")
+end
+
+# The oracle caches in Redis DB 0 and the port in DB 1; jobs go to the same DBs.
+REDIS_DB = { "rails" => 0, "rust" => 1 }.freeze
+
+# `ActiveSupport::TimeWithZone` lines inside a YAML mailer payload.
+JOB_TIMESTAMP = /\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d+ Z/.freeze
+
+def redis(db, *args)
+  `docker exec harness-redis-1 redis-cli -n #{db} #{args.map { |a| "'#{a}'" }.join(' ')}`.strip
+end
+
+def prepare(side, entry)
+  redis(REDIS_DB[side], "del", "queue:default")
+  return unless entry["observe"]&.include?("cache")
+
+  %w[http-universe https-universe].each { |key| redis(REDIS_DB[side], "set", key, "cached") }
+end
+
+def observe(side, entry)
+  out = {}
+  if entry["observe"]&.include?("jobs")
+    payloads = redis(REDIS_DB[side], "lrange", "queue:default", "0", "-1")
+    out["jobs"] = payloads.empty? ? [] : payloads.lines.map do |line|
+      job = JSON.parse(line)
+      # Mailer payloads embed the record's timestamps; the two sides reseed at
+      # different moments, so only the shape is contractual.
+      job = job.reject { |key, _| %w[jid created_at enqueued_at].include?(key) }
+      job["args"] = job["args"].map { |arg| arg.is_a?(String) ? arg.gsub(JOB_TIMESTAMP, "<timestamp>") : arg }
+      job
+    rescue JSON::ParserError
+      line.strip
+    end
+  end
+  if entry["observe"]&.include?("cache")
+    out["universe_keys"] = %w[http-universe https-universe].select do |key|
+      redis(REDIS_DB[side], "exists", key) == "1"
+    end
+  end
+  out
+end
+
+def replay_file(path)
+  entries = Psych.safe_load(File.read(path)) || []
+  entries.each do |entry|
+    name = entry["name"] || "#{entry['method']} #{entry['path']}"
+    record = { "name" => name, "request" => entry }
+    %w[rails rust].each do |side|
+      base = side == "rails" ? RAILS : RUST
+      begin
+        reseed if entry["reset"]
+        prepare(side, entry)
+        raw = fetch(base, entry)
+        record[side] = Normalize.response(**raw)
+        record["#{side}_observed"] = observe(side, entry) if entry["observe"]
+      rescue StandardError => error
+        record[side] = { "error" => "#{error.class}: #{error.message}" }
+      end
+    end
+    same = record["rails"] == record["rust"] &&
+           record["rails_observed"] == record["rust_observed"]
+    record["verdict"] = same ? "MATCH" : "DIFF"
+    puts JSON.dump(record)
+  end
+end
+
+corpus = ARGV[0] or abort("usage: replay CORPUS.yml")
+require "mixlib/authentication/signatureverification"
+replay_file(corpus)

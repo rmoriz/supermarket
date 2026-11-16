@@ -1,0 +1,130 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}profile{% endblock %}
+{% block content %}<div class="page profile" data-equalizer>
+  {% include "users/_sidebar.html" %}
+
+  <div class="main" data-equalizer-watch>
+    <h1>Manage Profile</h1>
+
+    <dl class="tabs radius" data-tab data-options="deep_linking:true">
+      <dd class="active"><a href="#profile" rel="manage_profile">Edit Profile</a></dd>
+      {% if github %}
+        <dd><a href="#github-accounts" rel="manage_github_accounts">{{ github_account_type }} Accounts</a></dd>
+      {% endif %}
+      <dd><a href="#collaborations" rel="manage_collaborations">Collaborations</a></dd>
+      <dd><a href="#keys" rel="manage_keys">Keys</a></dd>
+    </dl>
+
+    <div class="tabs-content">
+      <div class="content active" id="profile">
+        <form action="/profile" accept-charset="UTF-8" method="post" data-abide="true" class="edit_user">
+          <input type="hidden" name="_method" value="patch" autocomplete="off" />
+          <input type="hidden" name="authenticity_token" value="{{ shell.csrf }}" autocomplete="off" />
+          {% if !errors.is_empty() %}
+            <div class="panel callout radius alert">
+              <p>There were some problems submitting the form:</p>
+              <ul>
+                {% for error in errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <p>Your email, password and name are maintained and managed by your Chef account. <a href="{{ chef_profile_url }}">Edit them here.</a> They will be updated the next time you sign in to Supermarket. Avatars are powered by <a href="https://www.gravatar.com">Gravatar</a>.</p>
+
+          <fieldset>
+            <div class="company-field">
+              <label for="user_company">Company</label>
+              <input type="text" name="user[company]" id="user_company"{% if let Some(company) = user.company %} value="{{ company }}"{% endif %} placeholder="Company" title="Company" />
+            </div>
+            <div class="twitterusername-field">
+              <label for="user_twitter_username">Twitter Username</label>
+              <input type="text" name="user[twitter_username]" id="user_twitter_username"{% if let Some(value) = user.twitter_username %} value="{{ value }}"{% endif %} placeholder="Twitter Username" title="twitter username" />
+            </div>
+            <div class="slackusername-field">
+              <label for="user_slack_username">Chef Community Slack Username</label>
+              <input type="text" name="user[slack_username]" id="user_slack_username"{% if let Some(value) = user.slack_username %} value="{{ value }}"{% endif %} placeholder="Slack Username" title="slack username" />
+            </div>
+          </fieldset>
+          <fieldset>
+            Email Preferences<br><br>
+            {% for preference in email_preferences %}
+              <div>
+                <input autocomplete="off" name="user[email_preferences_attributes][{{ loop.index0 }}][_destroy]" type="hidden" value="1" />
+                <input{% if preference.checked %} checked="checked"{% endif %} id="user_email_preferences_attributes_{{ loop.index0 }}__destroy" name="user[email_preferences_attributes][{{ loop.index0 }}][_destroy]" type="checkbox" value="0" />
+                <label for="user_email_preferences_attributes_{{ loop.index0 }}__destroy">{{ preference.name }}</label>
+                <input autocomplete="off" id="user_email_preferences_attributes_{{ loop.index0 }}_system_email_id" name="user[email_preferences_attributes][{{ loop.index0 }}][system_email_id]" type="hidden" value="{{ preference.system_email_id }}" />
+              </div>
+              <input autocomplete="off" id="user_email_preferences_attributes_{{ loop.index0 }}_id" name="user[email_preferences_attributes][{{ loop.index0 }}][id]" type="hidden" value="{{ preference.id.unwrap_or_default() }}" />
+            {% endfor %}
+          </fieldset>
+          <input type="submit" name="commit" value="Update Profile" class="button primary radius" data-disable-with="Update Profile" />
+        </form>
+      </div>
+
+      {% if github %}
+        <div class="content" id="github-accounts">
+          <p>Linking your account lets other cookbook shoppers find you on {{ github_account_type }} for feedback, collaboration, and kudos. The link requests access only to your {{ github_account_type }} account's public information.</p>
+          <table>
+            {% for account in github_accounts %}
+              <tr>
+                <td><i class="fa fa-github"></i> {{ account }}</td>
+                <td class="text-right"><a rel="disconnect_github" class="button tiny alert radius" data-method="delete" href="/users/{{ user.id }}/accounts/{{ loop.index }}">Disconnect This Account</a></td>
+              </tr>
+            {% endfor %}
+          </table>
+
+          <a rel="connect_github" class="button radius" data-method="post" href="/auth/github" title="Connect with {{ github_account_type }} Account"><i class='fa fa-github'></i> Connect {{ github_account_type }} Account</a>
+        </div>
+      {% endif %}
+      <div class="content" id="collaborations">
+        {% if collaborations.is_empty() %}
+          <p>You are currently not a collaborator on any resources. Once you are, they will be listed here.</p>
+        {% else %}
+          <p>The resources you are a collaborator on.</p>
+          <div class="scrollWrapper">
+            <table>
+              {% for collaboration in collaborations %}
+                <tr>
+                  <td><a href="{{ collaboration.1 }}">{{ collaboration.0 }}</a></td>
+                  <td>{{ collaboration.2 }}</td>
+                  <td class="text-right"><a rel="remove_collaboration" class="button tiny alert radius" data-method="delete" href="/collaborators/{{ collaboration.3 }}">Remove Myself as a Collaborator</a></td>
+                </tr>
+              {% endfor %}
+        {% endif %}
+        </table>
+          </div>
+      </div>
+      <div class="content" id="keys">
+        <p>Your Supermarket key is the same as your key on the associated Chef
+           Server. You can change your credentials or keys by logging into
+           <a href="{{ chef_oauth2_url }}">this Supermarket's Chef Server</a>.</p>
+        {% if let Some(signature) = public_key_signature %}
+          <p>Current key fingerprint for this Supermarket is:</p>
+          <p><pre class="install">{{ signature }}</pre></p>
+          <p>This fingerprint should match the fingerprint of the private key you
+             have configured in knife. Check with:</p>
+          <p><pre class="install">openssl rsa -in your/private_key.pem -pubout -outform DER | openssl md5 -c</pre></p>
+          <p>If the signatures do not match, it could be that you have a newer key
+             on the Chef Server than the one known by Supermarket. Supermarket can
+             get the latest key if you log out of Supermarket and then log back in
+             to trigger an account refresh between the systems.</p>
+        {% else %}
+          <p><i class="fa fa-warning"></i> The account information from
+             <a href="{{ chef_oauth2_url }}">the associated Chef Server</a>
+             does not appear to contain a public key. Try logging out of
+             Supermarket and logging back in. If your key still does not appear
+             here, there is probably an issue with the authentication services
+             between Supermarket and the Chef Server. Check
+             <a href="https://status.chef.io/">status.chef.io</a> for service
+             alerts or for private Supermarkets contact support. You will not be
+             able to use Supermarket clients (e.g. knife supermarket or stove)
+             to publish cookbooks until a public key is associated with your
+             account.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

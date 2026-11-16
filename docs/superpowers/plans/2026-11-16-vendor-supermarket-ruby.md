@@ -39,20 +39,20 @@
 **Interfaces:**
 - Produces: `main` at a root commit, committed history that `git subtree add` can merge into; reference remote name `upstream-supermarket` and path `supermarket-ruby/` used by Tasks 2–3.
 
-- [ ] **Step 1: Write `.gitignore`**
+- [x] **Step 1: Write `.gitignore`**
 
 Contents: a single line, `.DS_Store`. Nothing Ruby-specific — upstream has its own.
 
-- [ ] **Step 2: Write `README.md`**
+- [x] **Step 2: Write `README.md`**
 
 Must state: this repo is a Rust port workspace for Chef Supermarket; `supermarket-ruby/` is upstream's Rails code, vendored read-only at a pinned commit and never to be edited in place; pointers to `supermarket-ruby/UPSTREAM.md`, the design doc, and the plan; the update recipe from Step 4; a Licensing section saying the root repo (once Rust code exists) is the port's own work, while `supermarket-ruby/` stays Apache-2.0 per its `LICENSE`.
 
-- [ ] **Step 3: Add the upstream remote**
+- [x] **Step 3: Add the upstream remote**
 
 Run: `git remote add upstream-supermarket https://github.com/chef/supermarket`
 Expected: no output; `git remote -v` lists it.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .gitignore README.md docs
@@ -70,17 +70,17 @@ Expected: root commit on `main`; `git log --oneline` shows exactly one commit.
 - Consumes: branch `main` with at least one commit; remote `upstream-supermarket`.
 - Produces: `supermarket-ruby/` populated at `80d517b2`, reachable history for that SHA.
 
-- [ ] **Step 1: Fetch upstream with full history**
+- [x] **Step 1: Fetch upstream with full history**
 
 Run: `git fetch --no-tags upstream-supermarket`
 Expected: refs downloaded, including `upstream-supermarket/main`; exit 0.
 
-- [ ] **Step 2: Confirm the pinned commit is present**
+- [x] **Step 2: Confirm the pinned commit is present**
 
 Run: `git cat-file -t 80d517b228fac3290fc83b06d3a873117d13b090`
 Expected: `commit`
 
-- [ ] **Step 3: Import as a subtree merge**
+- [x] **Step 3: Import as a subtree merge**
 
 Run:
 ```bash
@@ -88,7 +88,7 @@ git subtree add --prefix=supermarket-ruby 80d517b228fac3290fc83b06d3a873117d13b0
 ```
 Expected: a merge commit is created ("Add 'supermarket-ruby/' from commit …").
 
-- [ ] **Step 4: Verify the import**
+- [x] **Step 4: Verify the import**
 
 Run:
 ```bash
@@ -96,12 +96,12 @@ git log --oneline -1
 git rev-list --parents -1 HEAD
 git diff --quiet 80d517b228fac3290fc83b06d3a873117d13b090^{tree} HEAD:supermarket-ruby && echo tree-identical
 ls supermarket-ruby | head -30
-test -f supermarket-ruby/Gemfile && test -f supermarket-ruby/LICENSE && echo tree-ok
+test -f supermarket-ruby/src/supermarket/Gemfile && test -f supermarket-ruby/LICENSE && echo tree-ok
 git status --porcelain
 ```
-Expected: newest commit merges `80d517b2…`; `rev-list --parents` shows three parents (base, upstream commit); `tree-identical` (imported content byte-equal to upstream); tree shows the Rails app; `tree-ok`; clean status.
+Expected: newest commit merges `80d517b2…`; `rev-list --parents` shows two parents: the base commit and `80d517b2…`; `tree-identical` (imported content byte-equal to upstream); tree shows the Rails app; `tree-ok`; clean status.
 
-- [ ] **Step 5: Fix `.gitignore` only if the status in Step 4 is dirty**
+- [x] **Step 5: Fix `.gitignore` only if the status in Step 4 is dirty**
 
 If any upstream file is ignored, add the smallest negation for it and `git add` it; commit as `fix: keep upstream files unignored`. Otherwise skip.
 
@@ -114,7 +114,7 @@ If any upstream file is ignored, add the smallest negation for it and `git add` 
 - Consumes: imported tree and history from Task 2.
 - Produces: reproducible update recipe validated against the real remote.
 
-- [ ] **Step 1: Write `supermarket-ruby/UPSTREAM.md`**
+- [x] **Step 1: Write `supermarket-ruby/UPSTREAM.md`**
 
 Must contain: source URL, pinned SHA, import date `2026-11-16`, Apache-2.0 note pointing at the same directory's `LICENSE`, "do not edit upstream files here", and the update recipe:
 
@@ -123,23 +123,23 @@ git fetch upstream-supermarket
 git subtree pull --prefix=supermarket-ruby upstream-supermarket main
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add supermarket-ruby/UPSTREAM.md
 git commit -m "docs: record upstream provenance and update recipe"
 ```
 
-- [ ] **Step 3: Prove the pull path works**
+- [x] **Step 3: Prove the pull path works**
 
 Run: `git fetch upstream-supermarket && git subtree pull --prefix=supermarket-ruby upstream-supermarket main`
 Expected: either "Subtree is already up to date", or a fast-forward/merge that leaves `git status` clean and `UPSTREAM.md` present (`ls supermarket-ruby/UPSTREAM.md`).
 
-- [ ] **Step 4: Verify a fresh clone sees the tree**
+- [x] **Step 4: Verify a fresh clone sees the tree**
 
-Run: `git clone . /tmp/sm-clone-check && test -f /tmp/sm-clone-check/supermarket-ruby/Gemfile && echo clone-ok; rm -rf /tmp/sm-clone-check`
+Run: `git clone . /tmp/sm-clone-check && test -f /tmp/sm-clone-check/supermarket-ruby/src/supermarket/Gemfile && echo clone-ok; rm -rf /tmp/sm-clone-check`
 Expected: `clone-ok`
 
-- [ ] **Step 5: Re-sync UPSTREAM.md if Step 3 moved the pinned SHA**
+- [x] **Step 5: Re-sync UPSTREAM.md if Step 3 moved the pinned SHA**
 
 If the pull advanced the tree, update the SHA and date in `UPSTREAM.md`, then `git commit -am "docs: bump pinned upstream commit"`.

@@ -1,0 +1,17 @@
+<small class="followbutton">
+  {% if let Some(following) = cookbook.following %}
+    {% if following %}
+      <a rel="unfollow nofollow" class="button radius tiny follow" id="unfollow_cookbook" data-cookbook="{{ cookbook.name }}" data-method="delete" data-remote="true" href="/cookbooks/{{ cookbook.name }}/unfollow">
+        <i class="fa fa-users"></i>Unfollow<span class="cookbook_follow_count">{{ cookbook.followers }}</span>
+</a>
+    {% else %}
+      <a rel="follow nofollow" class="button radius tiny follow" id="follow_cookbook" data-cookbook="{{ cookbook.name }}" data-method="put" data-remote="true" href="/cookbooks/{{ cookbook.name }}/follow">
+        <i class="fa fa-users"></i>Follow<span class="cookbook_follow_count">{{ cookbook.followers }}</span>
+</a>
+    {% endif %}
+  {% else %}
+    <a rel="sign-in-to-follow nofollow" class="button radius tiny follow" title="You must be signed in to follow a cookbook." data-tooltip="true" data-method="put" href="/cookbooks/{{ cookbook.name }}/follow">
+      <i class="fa fa-users"></i>Follow<span class="cookbook_follow_count">{{ cookbook.followers }}</span>
+</a>
+  {% endif %}
+</small>

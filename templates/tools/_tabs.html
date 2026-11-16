@@ -1,0 +1,6 @@
+<dl class="tabs radius">
+  <dd class="{% if active == "maintains" %}active{% endif %}"><a href="/users/{{ user.username }}/tools" rel="view_tools">Maintains</a></dd>
+  {% if own_profile %}
+    <dd class='{% if active == "add" %}active{% endif %}'><a href="/tools/new" rel="add_tool">Add Tool</a></dd>
+  {% endif %}
+</dl>

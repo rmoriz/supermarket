@@ -18,7 +18,8 @@ gem "sidekiq-cron"
 gem "aws-sdk-s3"
 gem "chef", "~> 18.2", require: false
 gem "compass-rails"
-gem "ddtrace", "1.0.0", require: false
+# 1.0.0 no longer compiles on Ruby 3.2 (rb_thread_struct member removed)
+gem "ddtrace", "~> 1.23", require: false
 gem "dotenv"
 gem "ffi-libarchive"
 gem "foreman"

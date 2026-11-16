@@ -1,0 +1,9 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}collaborators{% endblock %}
+{% block content %}<div class="page nobg">
+  <h1 class="title">Collaborators</h1>
+  {% for collaborator in collaborators %}
+    <p>{{ collaborator.username }} on {{ collaborator.resource_name }}</p>
+  {% endfor %}
+</div>
+{% endblock %}

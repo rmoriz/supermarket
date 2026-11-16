@@ -1,0 +1,358 @@
+# Every registered route, once, for the phase-0 exit check.
+- name: POST /fieri/jobs
+  method: POST
+  path: /fieri/jobs
+- name: GET /fieri/status
+  method: GET
+  path: /fieri/status
+- name: GET /api/v1/metrics
+  method: GET
+  path: /api/v1/metrics
+- name: GET /api/v1/health
+  method: GET
+  path: /api/v1/health
+- name: GET /api/v1/cookbooks
+  method: GET
+  path: /api/v1/cookbooks
+- name: GET /api/v1/search
+  method: GET
+  path: /api/v1/search
+- name: GET /api/v1/cookbooks/{cookbook}
+  method: GET
+  path: /api/v1/cookbooks/{cookbook}
+- name: GET /api/v1/cookbooks/{cookbook}/contingent
+  method: GET
+  path: /api/v1/cookbooks/{cookbook}/contingent
+- name: GET /api/v1/cookbooks/{cookbook}/versions/{version}
+  method: GET
+  path: /api/v1/cookbooks/{cookbook}/versions/{version}
+- name: GET /api/v1/cookbooks/{cookbook}/versions/{version}/download
+  method: GET
+  path: /api/v1/cookbooks/{cookbook}/versions/{version}/download
+- name: POST /api/v1/cookbooks
+  method: POST
+  path: /api/v1/cookbooks
+- name: DELETE /api/v1/cookbooks/{cookbook}
+  method: DELETE
+  path: /api/v1/cookbooks/{cookbook}
+- name: DELETE /api/v1/cookbooks/{cookbook}/versions/{version}
+  method: DELETE
+  path: /api/v1/cookbooks/{cookbook}/versions/{version}
+- name: GET /api/v1/users/{user}
+  method: GET
+  path: /api/v1/users/{user}
+- name: POST /api/v1/cookbook-versions/cookstyle_evaluation
+  method: POST
+  path: /api/v1/cookbook-versions/cookstyle_evaluation
+- name: POST /api/v1/cookbook-versions/collaborators_evaluation
+  method: POST
+  path: /api/v1/cookbook-versions/collaborators_evaluation
+- name: POST /api/v1/cookbook-versions/publish_evaluation
+  method: POST
+  path: /api/v1/cookbook-versions/publish_evaluation
+- name: POST /api/v1/quality_metrics/cookstyle_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/cookstyle_evaluation
+- name: POST /api/v1/quality_metrics/collaborators_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/collaborators_evaluation
+- name: POST /api/v1/quality_metrics/publish_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/publish_evaluation
+- name: POST /api/v1/quality_metrics/supported_platforms_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/supported_platforms_evaluation
+- name: POST /api/v1/quality_metrics/contributing_file_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/contributing_file_evaluation
+- name: POST /api/v1/quality_metrics/testing_file_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/testing_file_evaluation
+- name: POST /api/v1/quality_metrics/version_tag_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/version_tag_evaluation
+- name: POST /api/v1/quality_metrics/no_binaries_evaluation
+  method: POST
+  path: /api/v1/quality_metrics/no_binaries_evaluation
+- name: GET /api/v1/tools/{tool}
+  method: GET
+  path: /api/v1/tools/{tool}
+- name: GET /api/v1/tools
+  method: GET
+  path: /api/v1/tools
+- name: GET /api/v1/tools-search
+  method: GET
+  path: /api/v1/tools-search
+- name: GET /cookbooks-directory
+  method: GET
+  path: /cookbooks-directory
+- name: GET /available_for_adoption
+  method: GET
+  path: /available_for_adoption
+- name: GET /universe
+  method: GET
+  path: /universe
+- name: GET /api/v1/universe
+  method: GET
+  path: /api/v1/universe
+- name: GET /status
+  method: GET
+  path: /status
+- name: GET /unsubscribe/{token}
+  method: GET
+  path: /unsubscribe/{token}
+- name: PUT /cookbooks/{id}/transfer_ownership
+  method: PUT
+  path: /cookbooks/{id}/transfer_ownership
+- name: GET /ownership_transfer/{token}/accept
+  method: GET
+  path: /ownership_transfer/{token}/accept
+- name: GET /ownership_transfer/{token}/decline
+  method: GET
+  path: /ownership_transfer/{token}/decline
+- name: GET /cookbooks
+  method: GET
+  path: /cookbooks
+- name: GET /cookbooks/{id}
+  method: GET
+  path: /cookbooks/{id}
+- name: PATCH /cookbooks/{id}
+  method: PATCH
+  path: /cookbooks/{id}
+- name: PUT /cookbooks/{id}
+  method: PUT
+  path: /cookbooks/{id}
+- name: GET /cookbooks/{id}/download
+  method: GET
+  path: /cookbooks/{id}/download
+- name: PUT /cookbooks/{id}/follow
+  method: PUT
+  path: /cookbooks/{id}/follow
+- name: DELETE /cookbooks/{id}/unfollow
+  method: DELETE
+  path: /cookbooks/{id}/unfollow
+- name: PUT /cookbooks/{id}/deprecate
+  method: PUT
+  path: /cookbooks/{id}/deprecate
+- name: DELETE /cookbooks/{id}/deprecate
+  method: DELETE
+  path: /cookbooks/{id}/deprecate
+- name: PUT /cookbooks/{id}/toggle_featured
+  method: PUT
+  path: /cookbooks/{id}/toggle_featured
+- name: GET /cookbooks/{id}/deprecate_search
+  method: GET
+  path: /cookbooks/{id}/deprecate_search
+- name: POST /cookbooks/{id}/adoption
+  method: POST
+  path: /cookbooks/{id}/adoption
+- name: GET /cookbooks/{id}/versions/{version}/download
+  method: GET
+  path: /cookbooks/{id}/versions/{version}/download
+- name: GET /cookbooks/{id}/versions/{version}
+  method: GET
+  path: /cookbooks/{id}/versions/{version}
+- name: GET /collaborators
+  method: GET
+  path: /collaborators
+- name: GET /collaborators/new
+  method: GET
+  path: /collaborators/new
+- name: POST /collaborators
+  method: POST
+  path: /collaborators
+- name: PUT /collaborators/{id}/transfer
+  method: PUT
+  path: /collaborators/{id}/transfer
+- name: DELETE /collaborators/{id}/destroy_group
+  method: DELETE
+  path: /collaborators/{id}/destroy_group
+- name: DELETE /collaborators/{id}
+  method: DELETE
+  path: /collaborators/{id}
+- name: GET /users/{id}
+  method: GET
+  path: /users/{id}
+- name: GET /users/{id}/tools
+  method: GET
+  path: /users/{id}/tools
+- name: GET /users/{id}/groups
+  method: GET
+  path: /users/{id}/groups
+- name: PUT /users/{id}/make_admin
+  method: PUT
+  path: /users/{id}/make_admin
+- name: DELETE /users/{id}/revoke_admin
+  method: DELETE
+  path: /users/{id}/revoke_admin
+- name: GET /users/{id}/followed_cookbook_activity
+  method: GET
+  path: /users/{id}/followed_cookbook_activity
+- name: DELETE /users/{user_id}/accounts/{id}
+  method: DELETE
+  path: /users/{user_id}/accounts/{id}
+- name: GET /groups
+  method: GET
+  path: /groups
+- name: GET /groups/new
+  method: GET
+  path: /groups/new
+- name: POST /groups
+  method: POST
+  path: /groups
+- name: GET /groups/{id}
+  method: GET
+  path: /groups/{id}
+- name: GET /groups/{id}/edit
+  method: GET
+  path: /groups/{id}/edit
+- name: PATCH /groups/{id}
+  method: PATCH
+  path: /groups/{id}
+- name: PUT /groups/{id}
+  method: PUT
+  path: /groups/{id}
+- name: DELETE /groups/{id}
+  method: DELETE
+  path: /groups/{id}
+- name: GET /group_members
+  method: GET
+  path: /group_members
+- name: GET /group_members/new
+  method: GET
+  path: /group_members/new
+- name: POST /group_members
+  method: POST
+  path: /group_members
+- name: GET /group_members/{id}
+  method: GET
+  path: /group_members/{id}
+- name: GET /group_members/{id}/edit
+  method: GET
+  path: /group_members/{id}/edit
+- name: PATCH /group_members/{id}
+  method: PATCH
+  path: /group_members/{id}
+- name: PUT /group_members/{id}
+  method: PUT
+  path: /group_members/{id}
+- name: DELETE /group_members/{id}
+  method: DELETE
+  path: /group_members/{id}
+- name: POST /group_members/{id}/make_admin
+  method: POST
+  path: /group_members/{id}/make_admin
+- name: GET /tools
+  method: GET
+  path: /tools
+- name: GET /tools/new
+  method: GET
+  path: /tools/new
+- name: POST /tools
+  method: POST
+  path: /tools
+- name: GET /tools/{id}
+  method: GET
+  path: /tools/{id}
+- name: GET /tools/{id}/edit
+  method: GET
+  path: /tools/{id}/edit
+- name: PATCH /tools/{id}
+  method: PATCH
+  path: /tools/{id}
+- name: PUT /tools/{id}
+  method: PUT
+  path: /tools/{id}
+- name: DELETE /tools/{id}
+  method: DELETE
+  path: /tools/{id}
+- name: POST /tools/{id}/adoption
+  method: POST
+  path: /tools/{id}/adoption
+- name: GET /tools-directory
+  method: GET
+  path: /tools-directory
+- name: PATCH /profile
+  method: PATCH
+  path: /profile
+- name: PUT /profile
+  method: PUT
+  path: /profile
+- name: GET /profile/edit
+  method: GET
+  path: /profile/edit
+- name: POST /profile/update_install_preference
+  method: POST
+  path: /profile/update_install_preference
+- name: PATCH /profile/change_password
+  method: PATCH
+  path: /profile/change_password
+- name: GET /profile/link-github
+  method: GET
+  path: /profile/link-github
+- name: GET /chat
+  method: GET
+  path: /chat
+- name: GET /chat/{channel}
+  method: GET
+  path: /chat/{channel}
+- name: GET /chat/{channel}/{date}
+  method: GET
+  path: /chat/{channel}/{date}
+- name: GET /auth/chef_oauth2/callback
+  method: GET
+  path: /auth/chef_oauth2/callback
+- name: POST /auth/chef_oauth2/callback
+  method: POST
+  path: /auth/chef_oauth2/callback
+- name: POST /auth/chef_oauth2
+  method: POST
+  path: /auth/chef_oauth2
+- name: GET /auth/failure
+  method: GET
+  path: /auth/failure
+- name: GET /login
+  method: GET
+  path: /login
+- name: GET /signin
+  method: GET
+  path: /signin
+- name: GET /sign-in
+  method: GET
+  path: /sign-in
+- name: GET /sign-up
+  method: GET
+  path: /sign-up
+- name: DELETE /logout
+  method: DELETE
+  path: /logout
+- name: DELETE /signout
+  method: DELETE
+  path: /signout
+- name: DELETE /sign-out
+  method: DELETE
+  path: /sign-out
+- name: GET /auth/{provider}/callback
+  method: GET
+  path: /auth/{provider}/callback
+- name: POST /auth/{provider}/callback
+  method: POST
+  path: /auth/{provider}/callback
+- name: POST /auth/{provider}
+  method: POST
+  path: /auth/{provider}
+- name: GET /dashboard
+  method: GET
+  path: /dashboard
+- name: GET /documentation
+  method: GET
+  path: /documentation
+- name: GET /robots
+  method: GET
+  path: /robots
+- name: GET /robots.txt
+  method: GET
+  path: /robots.txt
+- name: GET /
+  method: GET
+  path: /

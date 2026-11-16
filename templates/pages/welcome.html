@@ -1,0 +1,74 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}pages{% endblock %}
+{% block content %}<div class="page withspace">
+  {% if signout %}
+    <div class="signout-message">
+      <p>You have been signed out of Supermarket but may still be signed in to your Chef account. Visit <a href="{{ chef_identity_url }}">{{ chef_identity_url }}</a> to sign out completely.</p>
+    </div>
+  {% endif %}
+
+  <section class="sign_up_in">
+    <h2 class="text-center">Welcome to Supermarket. Find, explore and view Chef Infra Cookbooks for all of your ops needs.</h2>
+
+    <p class="text-center">
+      <a class="button radius" href="{{ chef_sign_up_url }}">Sign Up For a Chef Account</a>
+      <a class="button radius" href="/sign-in">Sign In With Your Chef Account</a>
+    </p>
+  </section>
+
+  <section class="welcome_resources">
+    <div>
+      <h2>Explore</h2>
+
+      <ul>
+        <li>
+          <a href="/cookbooks">Browse Cookbooks</a>
+        </li>
+        <li>
+          <a target="_blank" rel="noopener" href="https://chef.io/blog/">Read the Chef Blog</a>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <h2>Learn</h2>
+      <ul>
+        <li>
+          <a target="_blank" rel="noopener" href="https://learn.chef.io">Learn Chef</a>
+        </li>
+        <li>
+          <a target="_blank" rel="noopener" href="https://docs.chef.io">Read the Chef Docs</a>
+        </li>
+        <li>
+          <a target="_blank" rel="noopener" href="https://docs.chef.io/community_guidelines">Community Guidelines</a>
+        </li>
+        <li>
+          <a target="_blank" rel="noopener" href="https://docs.chef.io/community_contributions">How to Contribute</a>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <h2>Share</h2>
+      <ul>
+        <li>
+          <a target="_blank" rel="noopener" href="https://docs.chef.io/workstation/knife_supermarket#share">Share your cookbooks</a>
+        </li>
+        <li>
+          <a href="https://community.chef.io/slack">Join Chef Community Slack</a>
+        </li>
+        <li>
+          <a href="https://discourse.chef.io/" target="_blank" rel="noopener">Join the Chef Mailing List</a>
+        </li>
+        <li>
+          <a href="https://feedback.chef.io" target="_blank" rel="noopener">Share Your Ideas for Improving Chef</a>
+        </li>
+      </ul>
+      </ul>
+    </div>
+  </section>
+
+  <section class="cookbooks_stats">
+    <h2>Community Stats</h3>
+    {% include "resources/_community_stats.html" %}
+  </section>
+</div>
+{% endblock %}

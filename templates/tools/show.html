@@ -1,0 +1,21 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}tools{% endblock %}
+{% block content %}<div class="page resource tool_show" data-equalizer itemscope itemtype="http://schema.org/Code">
+  <div class="main" data-equalizer-watch>
+    <h1 class="heading">
+      <span itemprop="name">{{ tool.name }}</span>
+      <small itemprop="sampleType">{{ tool.type_label }}</small>
+    </h1>
+
+    {{ tool.description|safe }}
+
+    {% if !tool.instructions_raw.is_empty() %}
+      <h3>Install & Usage Instructions</h3>
+      {{ tool.instructions|safe }}
+    {% endif %}
+  </div>
+  <div class="sidebar" data-equalizer-watch>
+    {% include "tools/_sidebar.html" %}
+  </div>
+</div>
+{% endblock %}

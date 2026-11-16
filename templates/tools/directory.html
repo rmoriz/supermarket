@@ -1,0 +1,32 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}tools{% endblock %}
+{% block content %}<div class="page nobg">
+  <div class="tools_info">
+    {% if shell.viewer.is_some() %}
+      <a class="right tiny radius button" href="/tools/new">Add Tool</a>
+    {% endif %}
+    <h2>About Tools</h2>
+    <p>Tools are software that improve Chef's ecosystem. An example of a tool is Cookstyle. Cookstyle is a Ruby gem that analyzes the code of a Chef Infra cookbook. Most tools are open source and available on GitHub.</p>
+
+    <p><a href="/tools/new">Add the tools and plugins</a> that you have created to Supermarket to share them with the community.
+
+    <h3>Types of Tools</h3>
+
+    <p>There are various types of tools, each serving a slightly different purpose. If your tool does not fall into one of the types below, <a href="https://github.com/chef/supermarket/issues/new">open a GitHub issue requesting to add that type</a>.
+    <ul>
+      {% for link in type_links %}
+        <li><a href="{{ link.1 }}">{{ link.0 }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="recently_added_tools">
+    <div class="cookbooks_column_content">
+      <h2 class="title">Recently Added Tools</h2>
+      <ul class="simple_listing">
+        {% for tool in recent %}{% include "tools/_simple_tool.html" %}{% endfor %}
+      </ul>
+      <a class="button radius expand" href="/tools?order=created_at">View All Tools</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

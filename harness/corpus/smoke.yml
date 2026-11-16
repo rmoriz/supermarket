@@ -1,0 +1,25 @@
+# Phase 0 smoke: one entry per response shape the skeleton must already get right.
+- name: api health
+  method: GET
+  path: /api/v1/health
+- name: api metrics
+  method: GET
+  path: /api/v1/metrics
+- name: cookbook index
+  method: GET
+  path: /api/v1/cookbooks
+- name: cookbook show
+  method: GET
+  path: /api/v1/cookbooks/redis
+- name: universe
+  method: GET
+  path: /api/v1/universe
+- name: robots
+  method: GET
+  path: /robots.txt
+- name: root page
+  method: GET
+  path: /
+- name: unknown json
+  method: GET
+  path: /nope.json

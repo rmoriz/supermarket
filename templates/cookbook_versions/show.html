@@ -1,0 +1,7 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}cookbook_versions{% endblock %}
+{% block content %}<div class="page resource cookbook_show" data-equalizer itemscope itemtype="http://schema.org/Code">
+  {% include "cookbooks/_main.html" %}
+  {% include "cookbooks/_sidebar.html" %}
+</div>
+{% endblock %}

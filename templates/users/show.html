@@ -1,0 +1,35 @@
+{% extends "layouts/application.html" %}
+{% block body_class %}users{% endblock %}
+{% block content %}<div class="page profile" data-equalizer>
+  {% include "users/_sidebar.html" %}
+
+  <div class="main" data-equalizer-watch>
+      {% include "users/_heading.html" %}
+
+      <dl class="tabs radius">
+        <dd class="{% if tab.is_none() %}active{% endif %}"><a href="/users/{{ user.username }}">Owns</a></dd>
+        <dd class="{% if tab.as_deref() == Some("collaborates") %}active{% endif %}"><a href="/users/{{ user.username }}?tab=collaborates">Collaborates</a></dd>
+        <dd class="{% if tab.as_deref() == Some("follows") %}active{% endif %}"><a href="/users/{{ user.username }}?tab=follows">Follows</a></dd>
+      </dl>
+
+    <div class="tabs-content">
+      <div class="content active">
+        {% if !cookbooks.is_empty() %}
+          <ul class="listing">
+            {% for cookbook in cookbooks %}
+              {% include "cookbooks/_cookbook.html" %}
+            {% endfor %}
+            {{ pagination|safe }}
+          </ul>
+        {% else %}
+          {% if own_profile %}
+            <p>{{ empty_current }}</p>
+          {% else %}
+            <p>{{ empty_other }}</p>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

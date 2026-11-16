@@ -1,0 +1,8 @@
+<h1>Add Group Members</h1>
+<a class="close-reveal-modal">&#215;</a>
+<form action="/group_members" accept-charset="UTF-8" method="post">
+  <input type="hidden" name="authenticity_token" value="{{ shell.csrf }}" autocomplete="off" />
+  <input value="{{ group.id }}" autocomplete="off" type="hidden" name="group_member[group_id]" id="group_member_group_id" />
+  <input class="users multiple" data-url="/collaborators" id="user_ids" autocomplete="off" type="hidden" name="group_member[user_ids]" />
+  <input type="submit" name="commit" value="Add Member" class="button primary radius" data-disable-with="Add Member" />
+</form>

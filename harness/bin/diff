@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+# Reduces a replay log to MATCH/DIFF lines and exits 1 when anything differs.
+require "json"
+
+path = ARGV[0] or abort("usage: diff REPLAY.jsonl")
+matches = 0
+diffs = 0
+
+File.foreach(path) do |line|
+  record = JSON.parse(line)
+  if record["verdict"] == "MATCH"
+    matches += 1
+    next
+  end
+  diffs += 1
+  puts "DIFF #{record['name']}"
+  puts "  rails: #{JSON.dump(record['rails'])[0, 600]}"
+  puts "  rust:  #{JSON.dump(record['rust'])[0, 600]}"
+end
+
+puts "#{matches} match, #{diffs} diff"
+exit(diffs.zero? ? 0 : 1)

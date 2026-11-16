@@ -1,0 +1,20 @@
+<h1>Add Collaborators</h1>
+<a class="close-reveal-modal">&#215;</a>
+
+<form class="new_collaborator" id="new_collaborator" action="/collaborators" accept-charset="UTF-8" method="post">
+  <div class="row collapse">
+    <div class="small-12 columns">
+      <input type="hidden" name="collaborator[resourceable_type]" value="Cookbook" />
+      <input type="hidden" name="collaborator[resourceable_id]" value="{{ resource_id }}" />
+      <label for="collaborator_users">Users</label>
+      <input class="collaborators multiple" data-url="/collaborators?ineligible_user_ids={{ ineligible_ids }}" type="hidden" name="collaborator[user_ids]" id="user_ids" />
+      {% if collaborator_groups %}
+        <label for="collaborator_groups">Groups</label>
+        <input class="groups multiple" data-url="/groups" type="hidden" name="collaborator[group_ids]" id="group_ids" />
+      {% endif %}
+    </div>
+    <div class="small-2 columns">
+      <input type="submit" name="commit" value="Add" class="button radius postfix" />
+    </div>
+  </div>
+</form>

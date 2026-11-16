@@ -1,0 +1,17 @@
+<li itemscope itemtype="http://schema.org/Code">
+  <div class="header">
+    <div class="header-content">
+      <a rel="member" itemprop="username" href="/users/{{ member.username }}">{{ member.username }}</a>
+      <div class="remove">
+        {% if viewer_is_admin %}
+          {% if !member.admin || admin_count > 1 %}
+            <a class="button tiny alert radius" data-confirm="Are you sure you want to remove this member?" data-method="delete" href="/group_members/{{ member.id }}">Remove</a>
+          {% endif %}
+          {% if !member.admin %}
+            <a class="button tiny radius" data-method="post" href="/group_members/{{ member.id }}/make_admin">Make Admin</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</li>

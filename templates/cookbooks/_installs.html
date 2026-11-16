@@ -1,0 +1,44 @@
+<div class="installs" data-update-url="{{ base }}/profile/update_install_preference">
+  <dl data-tab data-options="deep_linking:true; scroll_to_content: false;" class="{% if signed_in %}persist-install-method{% endif %}">
+    {% if let Some(preference) = install_preference %}
+      <dd class="{% if preference == "policyfile" %}active{% endif %}">
+        <a href="#policyfile" class="button tiny secondary">Policyfile</a>
+      </dd>
+
+      <dd class="{% if preference == "berkshelf" || preference == "librarian" %}active{% endif %}">
+        <a href="#berkshelf" class="button tiny secondary">Berkshelf</a>
+      </dd>
+
+      <dd class="{% if preference == "knife" %}active{% endif %}">
+        <a href="#knife" class="button tiny secondary">Knife</a>
+      </dd>
+    {% else %}
+      <dd class="active">
+        <a href="#policyfile" class="button tiny secondary">Policyfile</a>
+      </dd>
+
+      <dd>
+        <a href="#berkshelf" class="button tiny secondary">Berkshelf</a>
+      </dd>
+
+      <dd>
+        <a href="#knife" class="button tiny secondary">Knife</a>
+      </dd>
+    {% endif %}
+  </dl>
+
+  <div class="tabs-content">
+    <div class="content{% if install_preference.is_none() || install_preference.as_deref() == Some("policyfile") %} active{% endif %}" id="policyfile">
+      <pre class="install">cookbook '{{ cookbook.name }}', {% if latest %}'~&gt;{% else %}'={% endif %} {{ version.version }}', :supermarket</pre>
+    </div>
+
+    <div class="content{% if install_preference.as_deref() == Some("berkshelf") || install_preference.as_deref() == Some("librarian") %} active{% endif %}" id="berkshelf">
+      <pre class="install">cookbook '{{ cookbook.name }}', {% if latest %}'~&gt;{% else %}'={% endif %} {{ version.version }}'</pre>
+    </div>
+
+    <div class="content{% if install_preference.as_deref() == Some("knife") %} active{% endif %}" id="knife">
+      <pre class="install">knife supermarket install {{ cookbook.name }}</pre>
+      <pre class="install">knife supermarket download {{ cookbook.name }}</pre>
+    </div>
+  </div>
+</div>

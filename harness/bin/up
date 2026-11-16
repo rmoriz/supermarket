@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+# Brings up the harness: Postgres, Redis, the Rust port, seeds both databases.
+# The Rails oracle is started separately (bin/rails server) because it needs a full
+# bundle; RAILS_URL points the replayer at it.
+require "open3"
+
+ROOT = File.expand_path("../..", __dir__)
+
+def run(*command, chdir: ROOT)
+  puts "+ #{command.join(' ')}"
+  system(*command, chdir: chdir, exception: true)
+end
+
+run("docker", "compose", "-f", "harness/docker-compose.test.yml", "up", "-d", "--wait")
+run(File.join(ROOT, "harness/bin/seed"))
+
+pid = spawn(
+  { "RUST_LOG" => "info" },
+  "cargo", "run", "--bin", "supermarket-rs",
+  chdir: ROOT,
+  out: File.join(ROOT, "harness/rust.log"),
+  err: File.join(ROOT, "harness/rust.log"),
+)
+File.write(File.join(ROOT, "harness/rust.pid"), pid.to_s)
+puts "rust started as #{pid} (log: harness/rust.log); rails expected on :3001"

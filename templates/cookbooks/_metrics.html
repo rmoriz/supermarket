@@ -1,0 +1,32 @@
+<div class="content" id="quality">
+  {% if public_metrics.is_empty() %}
+    <h2>No quality metric results found</h2>
+  {% else %}
+    {% for result in public_metrics %}
+      <h1>{{ result.name }} Metric
+        <pre>
+          {% if result.failure %}
+            <p>{{ version.version }} failed this metric</pre>
+            <pre>{{ result.feedback|safe }}</pre>
+          {% else %}
+            <p>{{ version.version }} passed this metric</pre>
+          {% endif %}
+        </pre>
+    {% endfor %}
+  {% endif %}
+  <br />
+  {% if admin %}
+    <h1>Admin Only Metrics (not visible to non-admin users)</h1>
+    {% for result in admin_metrics %}
+      <h1>{{ result.name }} Metric
+        <pre>
+          {% if result.failure %}
+            <p>{{ version.version }} failed this metric</pre>
+            <pre>{{ result.feedback|safe }}</pre>
+          {% else %}
+            <p>{{ version.version }} passed this metric</pre>
+          {% endif %}
+        </pre>
+    {% endfor %}
+  {% endif %}
+</div>

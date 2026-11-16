@@ -1,0 +1,108 @@
+<div class="sidebar" data-equalizer-watch>
+  {% include "resources/_owner.html" %}
+  {% include "resources/_collaborators.html" %}
+
+  {% if manage %}
+    {% include "cookbooks/_manage_cookbook.html" %}
+  {% endif %}
+
+  {% if cookbook.up_for_adoption %}
+    <div>
+      <a class="button radius tiny" data-method="post" href="/cookbooks/{{ cookbook.name }}/adoption">Adopt me!</a>
+    </div>
+  {% endif %}
+
+  <h3 class="{% if manage_urls %}show-cookbook-urls-manage{% endif %}" rel="edit-cookbook-urls">
+    {% if manage_urls %}
+      <a href="#">
+         <i class="fa fa-gear"></i>
+      </a>
+    {% endif %}
+    Details
+  </h3>
+
+  <div class="cookbook-details">
+    {% if manage_urls %}
+      <div class="manage-cookbook-urls hide">
+        <form class="edit_cookbook" data-abide="abide" action="/cookbooks/{{ cookbook.name }}" accept-charset="UTF-8" method="post">
+          <input type="hidden" name="_method" value="patch" />
+          <div class="source-url-field">
+            <input type="text" name="cookbook[source_url]" id="cookbook_source_url" value="{{ cookbook.source_url.clone().unwrap_or_default() }}" placeholder="Source URL: http://example.com" pattern="url" />
+            <small class="error">Must be formatted as a URL.</small>
+          </div>
+
+          <div class="issues-url-field">
+            <input type="text" name="cookbook[issues_url]" id="cookbook_issues_url" value="{{ cookbook.issues_url.clone().unwrap_or_default() }}" placeholder="Issues URL: http://example.com" pattern="url" />
+            <small class="error">Must be formatted as a URL.</small>
+          </div>
+
+          <input type="submit" name="commit" value="Save" class="button radius tiny submit-urls" data-disable-with="Saving..." />
+          <a href="#" class="button radius tiny secondary cancel-submit-urls">Cancel</a>
+        </form>
+      </div>
+    {% endif %}
+
+    <div class="cookbook-urls">
+      {% if let Some(source_url) = cookbook.source_url %}
+        <a class="button radius tiny source-url" itemprop="codeRepository" href="{{ source_url }}">View Source</a>
+      {% endif %}
+
+      {% if let Some(issues_url) = cookbook.issues_url %}
+        <a class="button secondary radius tiny issues-url" itemprop="discussionUrl" href="{{ issues_url }}">View Issues</a>
+      {% endif %}
+    </div>
+
+    <h4>
+      <i class="fa fa-clock-o"></i> Updated <span itemprop="dateModified">{{ version.updated_at }}</span>
+      <small>Created on <span itemprop="datePublished">{{ cookbook.created_at }}</span></small>
+    </h4>
+
+    <h4><i class="fa fa-desktop"></i> Supported Platforms</h4>
+    <ul class="cookbook_platforms">
+      {% if has_platforms %}
+        {% for platform in platforms %}
+          <li class="cookbook_platform_icon">
+            <img alt="{{ platform.name }} {{ platform.constraint }}" title="{{ platform.name }} {{ platform.constraint }}" height="16" width="16" class="fa" src="{{ platform.icon }}" />
+          </li>
+        {% endfor %}
+      {% else %}
+        <p>None Specified</p>
+      {% endif %}
+    </ul>
+
+    {% if cookbook.partner %}
+      <h4><i class="fa fa-shield"></i> Badges</h4>
+      <ul class="cookbook_badges">
+        {% if cookbook.partner %}
+        <li class="cookbook_badge_icon has-tip"/>
+          <a href="https://github.com/chef-partners/cookbook-guide/blob/master/cookbook-guide.pdf" target="new">
+            <img alt="Partner Cookbook" title="Partner Cookbook" height="16" width="16" id="partner_badge" class="fa" src="{{ partner_badge }}" />
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    {% endif %}
+
+
+    <h4><i class="fa fa-key"></i> License</h4>
+    <p>{{ version.license }}
+      {% if let Some(spdx_url) = version.spdx_license_url %}
+      <a target="_blank" class="cookbook_platform_icon" href="{{ spdx_url }}">
+        <i class="fa fa-external-link"></i>
+      </a>
+      {% endif %}
+    </p>
+
+    {% if let Some(chef_versions) = version.chef_versions %}
+      <h4><i class="fa fa-key"></i> Required Chef Infra Client</h4>
+      <p>{{ chef_versions }}</p>
+    {% endif %}
+
+    {% if let Some(ohai_versions) = version.ohai_versions %}
+      <h4><i class="fa fa-key"></i> Ohai Versions</h4>
+      <p>{{ ohai_versions }}</p>
+    {% endif %}
+
+    <a class="button secondary radius expand button_download_cookbook" href="/cookbooks/{{ cookbook.name }}/download">Download Cookbook</a>
+  </div>
+</div>
