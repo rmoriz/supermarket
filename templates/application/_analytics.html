@@ -1,0 +1,54 @@
+{% if shell.onetrust %}{% if shell.onetrust_id.is_some() %}
+  <script src="https://cdn.cookielaw.org/consent/{{ shell.onetrust_id.as_deref().unwrap_or_default() }}/otSDKStub.js" charset="UTF-8" data-domain-script="{{ shell.onetrust_id.as_deref().unwrap_or_default() }}" nonce="{{ shell.nonce }}"></script>
+{% endif %}{% endif %}
+
+{% if shell.gtag %}
+  <!-- GTag conditional -->
+  <script type="text/javascript" nonce="{{ shell.nonce }}">
+    var oneTrustHelper = (function () {
+      function evalGTagScript() {
+        var gtScript = document.getElementById("GTagScript");
+        gtScript.type = "text/javascript";
+        gtScript.classList.remove("optanon-category-2");
+        eval(gtScript.innerHTML);
+      };
+      return {
+        gtagFallback: function () {
+          console.warn('OneTrust not loaded.');
+          if (document.readyState !== 'loading') {
+            evalGTagScript();
+          } else {
+            document.addEventListener('readystatechange', function () {
+              if (document.readyState === 'interactive') {
+                evalGTagScript();
+              }
+            });
+          };
+        }
+      };
+    })();
+  </script>
+{% endif %}
+
+{% if shell.gtag %}
+  {% if shell.google_analytics_id.is_some() %}
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script src="https://www.googletagmanager.com/gtag/js?id={{ shell.google_analytics_id.as_deref().unwrap_or_default() }}," nonce="{{ shell.nonce }}"></script>
+
+  <script nonce="{{ shell.nonce }}">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){window.dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ shell.google_analytics_id.as_deref().unwrap_or_default() }}');
+  </script>
+  {% endif %}
+{% endif %}
+
+{% if shell.segment_write_key.is_some() %}
+  <script nonce="{{ shell.nonce }}">
+    !function(){var analytics=window.analytics=window.analytics||[];if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Segment snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on"];analytics.factory=function(t){return function(){var e=Array.prototype.slice.call(arguments);e.unshift(t);analytics.push(e);return analytics}};for(var t=0;t<analytics.methods.length;t++){var e=analytics.methods[t];analytics[e]=analytics.factory(e)}analytics.load=function(t){var e=document.createElement("script");e.type="text/javascript";e.async=!0;e.src=("https:"===document.location.protocol?"https://":"http://")+"cdn.segment.com/analytics.js/v1/"+t+"/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(e,n)};analytics.SNIPPET_VERSION="4.0.0";
+    analytics.load("{{ shell.segment_write_key.as_deref().unwrap_or_default() }}");
+    analytics.page();
+    }}();
+  </script>
+{% endif %}

@@ -12,6 +12,8 @@ pub struct AppState {
     pub db: PgPool,
     /// Redis client; connections are opened per use so construction needs no I/O.
     pub redis: redis::Client,
+    /// The Sidekiq queue, which may live on its own server (`REDIS_JOBQ_URL`).
+    pub redis_jobs: redis::Client,
     pub cfg: Arc<Config>,
     pub http: reqwest::Client,
     pub statsd: Arc<StatsdClient>,
@@ -23,9 +25,12 @@ impl AppState {
             Some(host) => crate::middleware::statsd_client(host),
             None => StatsdClient::from_sink("supermarket", NopMetricSink),
         };
+        let redis_jobs =
+            redis::Client::open(cfg.redis_jobq_url.clone()).expect("job queue redis client");
         AppState {
             db,
             redis,
+            redis_jobs,
             cfg,
             http: reqwest::Client::builder().build().expect("reqwest client"),
             statsd: Arc::new(statsd),

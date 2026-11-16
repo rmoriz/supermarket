@@ -59,7 +59,7 @@ async fn push(
     payload["enqueued_at"] = json!(now());
     let encoded = payload.to_string();
 
-    let mut conn = state.redis.get_multiplexed_async_connection().await?;
+    let mut conn = state.redis_jobs.get_multiplexed_async_connection().await?;
     redis::pipe()
         .sadd("queues", QUEUE)
         .lpush(format!("queue:{QUEUE}"), encoded)

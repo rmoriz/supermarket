@@ -51,6 +51,10 @@ fn nonce() -> String {
     base64::engine::general_purpose::STANDARD.encode(bytes)
 }
 
+/// Internal request header carrying the response's CSP nonce to the renderer,
+/// which needs it for the `nonce` attribute on inline `<script>` tags.
+pub const NONCE_HEADER: HeaderName = HeaderName::from_static("x-csp-nonce");
+
 /// Response marker for a route-level redirect (`redirect(...)` in `routes.rb`).
 /// Those never enter a controller, so they lack the default security headers.
 #[derive(Debug, Clone, Copy)]
@@ -445,12 +449,131 @@ pub async fn router_redirect_headers(req: Request<axum::body::Body>, next: Next)
     response
 }
 
-pub async fn security_policy(req: Request<axum::body::Body>, next: Next) -> Response {
+/// Route guard standing in for a Rails route constraint
+/// (`constraints: proc { Feature.active?(:tools) }`): an inactive feature leaves
+/// the route out of the table upstream, so the catch-all 404 answers — before
+/// CSRF would run for a mutation.
+pub async fn require_feature(
+    State(state): State<crate::state::AppState>,
+    req: Request<axum::body::Body>,
+    next: Next,
+) -> Response {
+    match gated_feature(req.uri().path()) {
+        Some(feature) if !state.cfg.feature_active(feature) => {
+            let headers = req.headers().clone();
+            crate::routes::routing_not_found(&state, &headers).await
+        }
+        _ => next.run(req).await,
+    }
+}
+
+/// The paths upstream gates on `:tools` and `:fieri`. `/api/v1/tools` and
+/// `/api/v1/tools-search` are outside the tools constraint.
+fn gated_feature(path: &str) -> Option<&'static str> {
+    if path == "/tools"
+        || path == "/tools.atom"
+        || path == "/tools-directory"
+        || path.starts_with("/tools/")
+        || (path.starts_with("/users/") && path.ends_with("/tools"))
+    {
+        return Some("tools");
+    }
+    if path.starts_with("/fieri/")
+        || path.starts_with("/api/v1/quality_metrics/")
+        || path.starts_with("/api/v1/cookbook-versions/")
+    {
+        return Some("fieri");
+    }
+    None
+}
+
+/// `ActionDispatch::HostAuthorization` as `production.rb` configures it: active
+/// only with `DISABLE_HOST_HEADER_ATTACK` and a non-empty `ALLOWED_HOSTS`.
+/// A blocked host (or an absent one) answers 403 with an empty body.
+pub async fn host_authorization(
+    State(state): State<crate::state::AppState>,
+    req: Request<axum::body::Body>,
+    next: Next,
+) -> Response {
+    let allowed = &state.cfg.allowed_hosts;
+    if allowed.is_empty() {
+        return next.run(req).await;
+    }
+    let host = req
+        .headers()
+        .get(header::HOST)
+        .and_then(|value| value.to_str().ok());
+    let forwarded = req
+        .headers()
+        .get("x-forwarded-host")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.rsplit(',').next())
+        .map(str::trim);
+    let blocked = host.is_none_or(|host| !host_allowed(allowed, host))
+        || forwarded.is_some_and(|host| !host_allowed(allowed, host));
+    if !blocked {
+        return next.run(req).await;
+    }
+    let xhr = req
+        .headers()
+        .get("x-requested-with")
+        .and_then(|value| value.to_str().ok())
+        == Some("XMLHttpRequest");
+    (
+        StatusCode::FORBIDDEN,
+        [
+            (
+                header::CONTENT_TYPE,
+                if xhr {
+                    "text/plain; charset=UTF-8"
+                } else {
+                    "text/html; charset=UTF-8"
+                },
+            ),
+            (header::CONTENT_LENGTH, "0"),
+        ],
+        "",
+    )
+        .into_response()
+}
+
+/// Hostname without the port, matched case-insensitively; an entry with a
+/// leading dot also allows its subdomains (Rails' `sanitize_string`).
+fn host_allowed(allowed: &[String], host: &str) -> bool {
+    let host = host.trim();
+    let host = if let Some(rest) = host.strip_prefix('[') {
+        rest.split(']').next().unwrap_or(rest)
+    } else if host.matches(':').count() > 1 {
+        // Bare IPv6 (`::1`) carries colons that are not a port.
+        host
+    } else {
+        host.rsplit_once(':')
+            .filter(|(_, port)| port.chars().all(|c| c.is_ascii_digit()))
+            .map(|(name, _)| name)
+            .unwrap_or(host)
+    }
+    .to_ascii_lowercase();
+    allowed.iter().any(|entry| {
+        let entry = entry.trim().to_ascii_lowercase();
+        match entry.strip_prefix('.') {
+            Some(suffix) => host == suffix || host.ends_with(&format!(".{suffix}")),
+            None => host == entry,
+        }
+    })
+}
+
+/// Inserts the CSP with a fresh per-response nonce and hands the same nonce to
+/// the renderer as a request header, where `Shell` picks it up for inline tags.
+pub async fn security_policy(mut req: Request<axum::body::Body>, next: Next) -> Response {
+    let value = nonce();
+    if let Ok(header) = HeaderValue::from_str(&value) {
+        req.headers_mut().insert(NONCE_HEADER, header);
+    }
     let mut response = next.run(req).await;
     if response.extensions().get::<ExceptionResponse>().is_some() {
         return response;
     }
-    let policy = CONTENT_SECURITY_POLICY.replace("%NONCE%", &nonce());
+    let policy = CONTENT_SECURITY_POLICY.replace("%NONCE%", &value);
     if let Ok(value) = HeaderValue::from_str(&policy) {
         response
             .headers_mut()
@@ -554,6 +677,40 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::NOT_MODIFIED);
+    }
+
+    #[test]
+    fn only_constrained_paths_are_gated() {
+        for path in [
+            "/tools",
+            "/tools.atom",
+            "/tools-directory",
+            "/tools/new",
+            "/tools/12",
+            "/tools/12/edit",
+            "/tools/12/adoption",
+            "/users/ada/tools",
+        ] {
+            assert_eq!(gated_feature(path), Some("tools"), "{path}");
+        }
+        for path in [
+            "/fieri/jobs",
+            "/fieri/status",
+            "/api/v1/quality_metrics/cookstyle_evaluation",
+            "/api/v1/cookbook-versions/cookstyle_evaluation",
+        ] {
+            assert_eq!(gated_feature(path), Some("fieri"), "{path}");
+        }
+        for path in [
+            "/",
+            "/cookbooks",
+            "/api/v1/tools",
+            "/api/v1/tools-search",
+            "/users/ada",
+            "/users/ada/groups",
+        ] {
+            assert_eq!(gated_feature(path), None, "{path}");
+        }
     }
 
     #[tokio::test]

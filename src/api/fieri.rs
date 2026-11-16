@@ -124,7 +124,7 @@ pub async fn status(State(state): State<AppState>, _headers: HeaderMap) -> Respo
     let mut sidekiq = status_map("REACHABLE");
     let mut redis_health = status_map("REACHABLE");
 
-    let mut connection = match state.redis.get_multiplexed_async_connection().await {
+    let mut connection = match state.redis_jobs.get_multiplexed_async_connection().await {
         Ok(connection) => connection,
         Err(_) => {
             sidekiq = status_map("UNREACHABLE");

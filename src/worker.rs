@@ -905,7 +905,7 @@ pub async fn execute(state: &AppState, payload: &str) -> bool {
 /// Writes the two sidekiq-cron entries the initializer loads, in sidekiq-cron's
 /// own Redis representation.
 pub async fn install_cron(state: &AppState) {
-    let mut conn = match state.redis.get_multiplexed_async_connection().await {
+    let mut conn = match state.redis_jobs.get_multiplexed_async_connection().await {
         Ok(conn) => conn,
         Err(_) => return,
     };
@@ -988,7 +988,7 @@ pub async fn schedule_loop(state: AppState) {
             if !due {
                 continue;
             }
-            let Ok(mut conn) = state.redis.get_multiplexed_async_connection().await else {
+            let Ok(mut conn) = state.redis_jobs.get_multiplexed_async_connection().await else {
                 continue;
             };
             let key = format!("cron_job:{name}");
@@ -1007,7 +1007,7 @@ pub async fn schedule_loop(state: AppState) {
 pub async fn run_forever(state: AppState) {
     install_cron(&state).await;
     tokio::spawn(schedule_loop(state.clone()));
-    let Ok(mut conn) = state.redis.get_multiplexed_async_connection().await else {
+    let Ok(mut conn) = state.redis_jobs.get_multiplexed_async_connection().await else {
         return;
     };
     let queue = format!("queue:{QUEUE}");

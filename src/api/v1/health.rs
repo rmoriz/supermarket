@@ -89,7 +89,7 @@ async fn check(state: &AppState) -> Value {
         }
     }
 
-    let redis = state.redis.get_multiplexed_async_connection().await;
+    let redis = state.redis_jobs.get_multiplexed_async_connection().await;
     match redis {
         Err(_) => {
             report.sidekiq = status_map(UNREACHABLE);

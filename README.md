@@ -51,8 +51,17 @@ the normal 404 page.
 Background jobs live in `target/release/supermarket-worker` (Sidekiq-compatible
 `queue:default`). It also carries the only ops task the app needs,
 `supermarket-worker spdx all|latest NAME|version NAME VERSION`, replacing
-`rake update_spdx_license:run:*`. Uploads need
-`/tmp` (or the configured storage root) writable plus the S3 variables.
+`rake update_spdx_license:run:*`. Uploads go to `public/system` and need that
+directory writable; `S3_BUCKET`/`S3_REGION` are parsed but S3 storage is not
+implemented yet (see [`docs/known-gaps.md`](docs/known-gaps.md)).
+
+`REDIS_JOBQ_URL` puts the Sidekiq queue on its own Redis (falls back to
+`REDIS_URL`); the universe cache stays on `REDIS_URL`. `STATSD_URL` plus
+`STATSD_PORT` enable the counters. `ENABLE_GTAG`/`GOOGLE_ANALYTICS_ID`,
+`ENABLE_ONETRUST`/`ONETRUST_ID` and `SEGMENT_WRITE_KEY` add the analytics tags,
+and `AIR_GAPPED=true` drops them plus the Google Fonts link. `ALLOWED_HOSTS`
+with `DISABLE_HOST_HEADER_ATTACK=true` turns on the host allowlist, and
+`CHEF_OAUTH2_VERIFY_SSL=false` accepts a self-signed id server certificate.
 
 ## Parity harness
 

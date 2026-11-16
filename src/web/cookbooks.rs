@@ -1598,6 +1598,8 @@ pub async fn follow(
         .execute(&state.db)
         .await;
     }
+    // Upstream increments after `create` even when the record is a duplicate.
+    let _ = state.statsd.incr("cookbook.followed");
     render_follow_button(&state, &headers, &cookbook.name, params.list.is_some()).await
 }
 
@@ -1636,6 +1638,7 @@ pub async fn unfollow(
     .bind(cookbook.id)
     .execute(&state.db)
     .await;
+    let _ = state.statsd.incr("cookbook.unfollowed");
     render_follow_button(&state, &headers, &cookbook.name, params.list.is_some()).await
 }
 

@@ -68,8 +68,8 @@ Uploads and the signed API flip last, in a short announced window:
    writes only, keeping workers up to drain).
 2. Flip `uploads`. Both apps share one database, so no data migration runs.
 3. Smoke the API by hand: `POST /api/v1/cookbooks` with a signed artifact, one
-   `DELETE`, one fieri job, one quality-metric POST. Confirm rows, S3 objects
-   and jobs land.
+   `DELETE`, one fieri job, one quality-metric POST. Confirm rows, stored
+   artifacts and jobs land.
 4. Unpause the workers; they now read jobs written by Rust, which use the same
    payload classes and keys.
 
@@ -88,14 +88,19 @@ Always one config edit and a strangle restart, no deploy:
   Rails below one instance during the rollout.
 
 Because the schema never diverged, a rollback needs no data repair. Uploaded
-artifacts stay in S3 and rows stay in Postgres; both apps read them.
+artifacts stay where the database says they are and rows stay in Postgres; both
+apps read them. The port writes to `public/system`, which is also paperclip's
+filesystem path — but it does not speak S3 yet, so a deployment that sets
+`S3_BUCKET`/`S3_REGION` would have Rust and Rails writing to different storage
+layers (see [`known-gaps.md`](known-gaps.md)).
 
 ## 5. S3 grace period
 
-For the first 30 days after the final flip, Rust never deletes S3 objects. The
-deletion worker writes tombstones/rows but leaves object storage alone. A
-bucket lifecycle rule removes orphans after day 30. This keeps a rollback past
-the window lossless even for deleted versions.
+With S3 storage the bucket lifecycle rule keeps orphans for 30 days. Today's
+build stores artifacts on the filesystem instead, so the grace period is just
+"do not prune `public/system`": the deletion worker writes tombstones/rows but
+leaves the files alone, which keeps a rollback past the window lossless even
+for deleted versions.
 
 ## 6. Proxy removal
 

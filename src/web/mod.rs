@@ -581,6 +581,11 @@ pub const PLATFORM_OPTIONS: &[&str] = &[
     "windows",
 ];
 
+/// A set-but-empty variable behaves like an unset one for optional snippets.
+fn env_nonempty(name: &str) -> Option<String> {
+    std::env::var(name).ok().filter(|value| !value.is_empty())
+}
+
 pub struct Shell<'a> {
     pub title: Option<String>,
     pub description: Option<String>,
@@ -610,6 +615,13 @@ pub struct Shell<'a> {
     pub script: String,
     pub fonts: bool,
     pub analytics: String,
+    /// CSP nonce for the inline analytics tags; empty outside the CSP stack.
+    pub nonce: String,
+    pub onetrust_id: Option<String>,
+    pub onetrust: bool,
+    pub gtag: bool,
+    pub google_analytics_id: Option<String>,
+    pub segment_write_key: Option<String>,
     pub air_gapped: bool,
 }
 
@@ -654,8 +666,18 @@ impl<'a> Shell<'a> {
             apple_touch_icon: image_url(cfg, "apple-touch-icon.png"),
             stylesheet: asset_path("application.css"),
             script: asset_path("application.js"),
-            fonts: true,
+            fonts: !air_gapped,
             analytics: String::new(),
+            nonce: headers
+                .get(crate::middleware::NONCE_HEADER)
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or_default()
+                .to_owned(),
+            onetrust_id: env_nonempty("ONETRUST_ID"),
+            onetrust: std::env::var("ENABLE_ONETRUST").as_deref() == Ok("true"),
+            gtag: std::env::var("ENABLE_GTAG").as_deref() == Ok("true"),
+            google_analytics_id: env_nonempty("GOOGLE_ANALYTICS_ID"),
+            segment_write_key: env_nonempty("SEGMENT_WRITE_KEY"),
             air_gapped,
         }
     }

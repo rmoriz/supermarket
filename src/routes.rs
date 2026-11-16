@@ -58,16 +58,21 @@ pub async fn fallback(State(state): State<AppState>, headers: HeaderMap, uri: Ur
     if let Some(format) = uri.path().strip_prefix("/robots.") {
         return crate::web::pages::robots_format(State(state), Path(format.to_owned())).await;
     }
+    routing_not_found(&state, &headers).await
+}
+
+/// The catch-all 404, shared with the feature gates that stand in for Rails'
+/// route constraints.
+pub async fn routing_not_found(state: &AppState, headers: &HeaderMap) -> Response {
     let json = headers
         .get(header::ACCEPT)
         .and_then(|value| value.to_str().ok())
         .map(|value| value.contains("application/json"))
         .unwrap_or(false);
-    let _ = uri;
     // No route matched, so the failure happens outside any controller: the
     // exceptions page carries no CSP, cache-control or session cookie.
     let mut response =
-        crate::web::pages::error_page(&state, &headers, StatusCode::NOT_FOUND, json).await;
+        crate::web::pages::error_page(state, headers, StatusCode::NOT_FOUND, json).await;
     response
         .extensions_mut()
         .insert(crate::middleware::ExceptionResponse);
@@ -301,9 +306,6 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/tools", get(tools::index))
         .route("/api/v1/tools/{tool}", get(tools::show))
         .route("/api/v1/tools-search", get(tools::search))
-        .route("/fieri/jobs", post(crate::api::fieri::create))
-        .route("/fieri/status", get(crate::api::fieri::status))
-        .merge(quality_metric_routes())
         .route("/universe", get(universe::index))
         .route("/api/v1/universe", get(universe::index))
         // ── web, read paths ─────────────────────────────────────────────────
@@ -338,7 +340,6 @@ pub fn router(state: AppState) -> Router {
             get(web::cookbooks::download_version),
         )
         .route("/users/{id}", get(web::users::show))
-        .route("/users/{id}/tools", get(web::users::tools))
         .route("/users/{id}/groups", get(web::users::groups))
         .route(
             "/users/{id}/followed_cookbook_activity",
@@ -387,26 +388,10 @@ pub fn router(state: AppState) -> Router {
             "/unsubscribe/{token}",
             get(web::email_preferences::unsubscribe),
         )
-        .route("/tools", get(web::tools::index).post(web::tools::create))
-        .route("/tools.atom", get(web::tools::index_atom))
-        .route("/tools-directory", get(web::tools::directory))
         .route("/chat", get(web::irc_logs::index))
         .route("/chat/{channel}", get(web::irc_logs::show_channel))
         .route("/chat/{channel}/{date}", get(web::irc_logs::show_date))
         .route("/robots", get(fallback))
-        .route("/tools/new", get(web::tools::new))
-        .route(
-            "/tools/{id}",
-            get(web::tools::show)
-                .patch(web::tools::update)
-                .put(web::tools::update)
-                .delete(web::tools::destroy),
-        )
-        .route(
-            "/tools/{id}/adoption",
-            axum::routing::post(web::tools::adoption),
-        )
-        .route("/tools/{id}/edit", get(web::tools::edit))
         // ── web, mutations ──────────────────────────────────────────────────
         .route(
             "/cookbooks/{id}/follow",
@@ -496,6 +481,34 @@ pub fn router(state: AppState) -> Router {
         // upstream; the container has no separate web server in front.
         .nest_service("/system", ServeDir::new("public/system"));
 
+    // Routes upstream removes from the table when a feature is inactive
+    // (`constraints: proc { Feature.active?(:tools) }`, and the fieri engine
+    // mount). They stay registered here; the `require_feature` layer answers
+    // the catch-all 404 while the flag is off.
+    let gated_tools = Router::new()
+        .route("/tools", get(web::tools::index).post(web::tools::create))
+        .route("/tools.atom", get(web::tools::index_atom))
+        .route("/tools-directory", get(web::tools::directory))
+        .route("/tools/new", get(web::tools::new))
+        .route(
+            "/tools/{id}",
+            get(web::tools::show)
+                .patch(web::tools::update)
+                .put(web::tools::update)
+                .delete(web::tools::destroy),
+        )
+        .route(
+            "/tools/{id}/adoption",
+            axum::routing::post(web::tools::adoption),
+        )
+        .route("/tools/{id}/edit", get(web::tools::edit))
+        .route("/users/{id}/tools", get(web::users::tools));
+    let gated_fieri = Router::new()
+        .route("/fieri/jobs", post(crate::api::fieri::create))
+        .route("/fieri/status", get(crate::api::fieri::status))
+        .merge(quality_metric_routes());
+    router = router.merge(gated_tools).merge(gated_fieri);
+
     // `public/` is only mounted when `RAILS_SERVE_STATIC_FILES` is set, which is
     // the same switch `production.rb` uses.
     if std::env::var("RAILS_SERVE_STATIC_FILES")
@@ -527,6 +540,14 @@ pub fn router(state: AppState) -> Router {
         .layer(axum::middleware::from_fn_with_state(
             forgery_state,
             crate::middleware::verify_forgery,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::middleware::require_feature,
+        ))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::middleware::host_authorization,
         ))
         .fallback(fallback)
         .method_not_allowed_fallback(fallback)
@@ -664,5 +685,139 @@ mod tests {
         );
         let body = to_bytes(response.into_body(), 1 << 20).await.unwrap();
         assert!(body.starts_with(b"<!DOCTYPE html>"));
+    }
+
+    fn app_with(features: &str) -> Router {
+        let mut cfg = test_config();
+        cfg.features = features
+            .split(',')
+            .filter(|feature| !feature.is_empty())
+            .map(str::to_owned)
+            .collect();
+        router(crate::state::AppState::for_tests(cfg))
+    }
+
+    async fn fetch(app: Router, method: &str, path: &str) -> (StatusCode, Vec<u8>) {
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .method(method)
+                    .uri(path)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let status = response.status();
+        let body = to_bytes(response.into_body(), 1 << 20).await.unwrap();
+        (status, body.to_vec())
+    }
+
+    /// The `tools` constraint upstream removes these paths from the table, so
+    /// they answer the same catch-all 404 as an unknown path.
+    #[tokio::test]
+    async fn tools_routes_404_without_the_flag() {
+        for path in ["/tools", "/tools-directory", "/users/ada/tools"] {
+            let (status, body) = fetch(app_with("fieri"), "GET", path).await;
+            assert_eq!(status, StatusCode::NOT_FOUND, "{path}");
+            assert!(body.starts_with(b"<!DOCTYPE html>"), "{path}");
+        }
+        let (status, _) = fetch(app_with("fieri"), "POST", "/tools").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    /// `/api/v1/tools` is outside the constraint upstream and keeps answering.
+    #[tokio::test]
+    async fn api_tool_routes_ignore_the_flag() {
+        let (status, _) = fetch(app_with(""), "GET", "/api/v1/tools").await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn tools_routes_answer_with_the_flag() {
+        let (status, _) = fetch(app_with("tools,fieri"), "GET", "/tools").await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
+        let (status, _) = fetch(app_with("tools,fieri"), "GET", "/tools-directory").await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn fieri_routes_404_without_the_flag() {
+        let (status, body) = fetch(app_with("tools"), "GET", "/fieri/status").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(body.starts_with(b"<!DOCTYPE html>"));
+        let (status, _) = fetch(
+            app_with("tools"),
+            "POST",
+            "/api/v1/quality_metrics/cookstyle_evaluation",
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        let (status, _) = fetch(
+            app_with("tools"),
+            "POST",
+            "/api/v1/cookbook-versions/cookstyle_evaluation",
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn fieri_routes_answer_with_the_flag() {
+        let (status, _) = fetch(app_with("fieri"), "GET", "/fieri/status").await;
+        assert_ne!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn host_allowlist_blocks_foreign_hosts() {
+        let mut cfg = test_config();
+        cfg.allowed_hosts = vec!["example.test".into(), ".example.test".into()];
+        let app = router(crate::state::AppState::for_tests(cfg));
+        let allowed = app
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/")
+                    .header(header::HOST, "www.example.test:3000")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(allowed.status(), StatusCode::FORBIDDEN);
+        let blocked = app
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/")
+                    .header(header::HOST, "evil.test")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(blocked.status(), StatusCode::FORBIDDEN);
+        assert_eq!(
+            blocked.headers().get(header::CONTENT_TYPE).unwrap(),
+            "text/html; charset=UTF-8"
+        );
+        assert_eq!(
+            blocked
+                .headers()
+                .get(header::CONTENT_LENGTH)
+                .and_then(|value| value.to_str().ok()),
+            Some("0")
+        );
+        // An absent Host is blocked too.
+        let missing = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(missing.status(), StatusCode::FORBIDDEN);
     }
 }

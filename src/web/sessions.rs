@@ -194,10 +194,13 @@ pub async fn callback(
     let Some(code) = params.code.as_deref() else {
         return pages::error_page(&state, &headers, StatusCode::INTERNAL_SERVER_ERROR, false).await;
     };
-    let client = reqwest::Client::builder()
-        .user_agent("supermarket")
-        .build()
-        .unwrap_or_default();
+    let mut builder = reqwest::Client::builder().user_agent("supermarket");
+    // `omniauth.rb` sets `verify: false` on the strategy when
+    // `CHEF_OAUTH2_VERIFY_SSL=false`, which covers its token and userinfo calls.
+    if name == "chef_oauth2" && !state.cfg.chef_oauth2_verify_ssl {
+        builder = builder.danger_accept_invalid_certs(true);
+    }
+    let client = builder.build().unwrap_or_default();
     let token_url = if provider.token_url.starts_with("http") {
         provider.token_url.clone()
     } else {
