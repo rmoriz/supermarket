@@ -77,6 +77,16 @@ and the docs. `docs/copy-changes.md` lists every swap; the same list lives in
 - Full corpus green with these swaps, direct and through the proxy (same counts
   as in *Final verification*).
 
+## Test isolation
+
+`tests/api.rs` shares one seeded schema across parallel cases. A download shifts
+the download counters and Postgres rewrites the updated heap tuple, which
+reorders the unordered `metrics.versions` map (the Rails jbuilder view has the
+same non-determinism). The download cases now hold a lock, re-establish the
+seeded counters before reading and put them back before asserting, and
+`show_body_is_exact` keeps the stable body bytes exact but compares the
+volatile version map by key instead of by order.
+
 ## Known local-oracle quirks (not port bugs)
 
 - Rails' universe cache is a Marshal entry. A JSON value under the same key from

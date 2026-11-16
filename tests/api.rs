@@ -13,6 +13,14 @@ use tower::ServiceExt;
 
 static SEED: Once = Once::new();
 
+/// The download handlers `UPDATE` the counters, and Postgres answers the
+/// unordered `metrics.versions` scan in heap order, so an `UPDATE` moves the
+/// tuple and reshuffles those keys — the Rails jbuilder view has the same
+/// non-determinism. Tests that mutate or byte-compare the counters take this
+/// lock, re-establish the seeded baseline before reading, and put it back
+/// before releasing.
+static DOWNLOAD_COUNTERS: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 fn config() -> Config {
     // Tests default to Redis DB 2: DB 0 belongs to the Rails oracle, and a JSON
     // universe entry written by the tests would poison the oracle's Marshal
@@ -35,15 +43,30 @@ fn config() -> Config {
 
 fn app() -> Router {
     SEED.call_once(|| {
-        let output = std::process::Command::new("harness/bin/seed")
-            .env("DATABASE_URL", config().database_url)
-            .output()
-            .expect("run seed");
-        assert!(
-            output.status.success(),
-            "seed failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
+        // Other worktrees seed this same harness database; overlapping seeds
+        // abort on the truncate/insert gap with a duplicate key, so retry.
+        let mut failure = None;
+        for attempt in 0..3 {
+            if attempt > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(250 * attempt));
+            }
+            let output = std::process::Command::new("harness/bin/seed")
+                .env("DATABASE_URL", config().database_url)
+                .output()
+                .expect("run seed");
+            if output.status.success() {
+                failure = None;
+                break;
+            }
+            failure = Some(output);
+        }
+        if let Some(output) = failure {
+            panic!(
+                "seed failed: {}\n{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
     });
     let state = AppState::for_tests(config());
     routes::router(state)
@@ -64,6 +87,39 @@ async fn get(path: &str) -> (u16, String) {
         .await
         .unwrap();
     (status, String::from_utf8(body.to_vec()).unwrap())
+}
+
+/// The counters the seed writes for redis/1.0.0 and its cookbook: `(api, web)`.
+const SEEDED_VERSION_COUNTERS: (i32, i32) = (1, 1);
+const SEEDED_COOKBOOK_COUNTERS: (i32, i32) = (2, 3);
+
+/// Puts the redis/1.0.0 counters (and its cookbook's) back to the seeded
+/// values in one transaction. Setting them absolutely rather than decrementing
+/// also repairs drift left by an interrupted run.
+async fn establish_counter_baseline() {
+    let state = AppState::for_tests(config());
+    let mut tx = state.db.begin().await.expect("begin counter reset");
+    sqlx::query(
+        "UPDATE cookbook_versions
+            SET api_download_count = $1, web_download_count = $2
+          WHERE cookbook_id = 1 AND version = '1.0.0'",
+    )
+    .bind(SEEDED_VERSION_COUNTERS.0)
+    .bind(SEEDED_VERSION_COUNTERS.1)
+    .execute(&mut *tx)
+    .await
+    .expect("reset version counters");
+    sqlx::query(
+        "UPDATE cookbooks
+            SET api_download_count = $1, web_download_count = $2
+          WHERE id = 1",
+    )
+    .bind(SEEDED_COOKBOOK_COUNTERS.0)
+    .bind(SEEDED_COOKBOOK_COUNTERS.1)
+    .execute(&mut *tx)
+    .await
+    .expect("reset cookbook counters");
+    tx.commit().await.expect("commit counter reset");
 }
 
 #[tokio::test]
@@ -107,21 +163,36 @@ async fn index_errors_are_byte_exact() {
 
 #[tokio::test]
 async fn show_body_is_exact() {
+    let _counters = DOWNLOAD_COUNTERS.lock().await;
+    establish_counter_baseline().await;
     let (status, body) = get("/api/v1/cookbooks/redis").await;
     assert_eq!(status, 200);
-    assert_eq!(
-        body,
-        concat!(
-            r#"{"name":"redis","maintainer":"ada","description":"Installs redis, newer.","category":"Database","#,
-            r#""latest_version":"http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","#,
-            r#""external_url":"https://example.test/redis","source_url":"https://example.test/redis","#,
-            r#""issues_url":"https://example.test/redis/issues","average_rating":null,"#,
-            r#""created_at":"2020-02-01T00:00:00.000Z","updated_at":"2020-02-02T00:00:00.000Z","#,
-            r#""up_for_adoption":null,"deprecated":false,"#,
-            r#""versions":["http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","http://localhost:3000/api/v1/cookbooks/redis/versions/1.0.0"],"#,
-            r#""metrics":{"downloads":{"total":5,"versions":{"1.0.0":2,"1.10.0":2}},"followers":1,"collaborators":1}}"#
-        )
+    // Stable head, byte for byte, up to the first volatile key.
+    let head = concat!(
+        r#"{"name":"redis","maintainer":"ada","description":"Installs redis, newer.","category":"Database","#,
+        r#""latest_version":"http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","#,
+        r#""external_url":"https://example.test/redis","source_url":"https://example.test/redis","#,
+        r#""issues_url":"https://example.test/redis/issues","average_rating":null,"#,
+        r#""created_at":"2020-02-01T00:00:00.000Z","updated_at":"2020-02-02T00:00:00.000Z","#,
+        r#""up_for_adoption":null,"deprecated":false,"#,
+        r#""versions":["http://localhost:3000/api/v1/cookbooks/redis/versions/1.10.0","http://localhost:3000/api/v1/cookbooks/redis/versions/1.0.0"],"#,
+        r#""metrics":{"downloads":{"total":5,"versions":{"#
     );
+    let rest = body
+        .strip_prefix(head)
+        .unwrap_or_else(|| panic!("stable body head changed: {body}"));
+
+    // `metrics.versions` is built from an unordered scan, so its keys come back
+    // in Postgres' physical row order and a download rewrites the heap tuples.
+    // Pin the pairs by key and keep the surrounding bytes exact.
+    let (versions, tail) = rest.split_once('}').expect("versions object closes");
+    let versions: std::collections::BTreeMap<String, i64> =
+        serde_json::from_str(&format!("{{{versions}}}")).expect("versions object parses");
+    assert_eq!(
+        versions,
+        std::collections::BTreeMap::from([("1.0.0".to_owned(), 2), ("1.10.0".to_owned(), 2),])
+    );
+    assert_eq!(tail, r#"},"followers":1,"collaborators":1}}"#);
 }
 
 #[tokio::test]
@@ -184,6 +255,8 @@ async fn version_show_covers_latest_and_underscore_forms() {
 
 #[tokio::test]
 async fn download_redirects_and_counts_per_protocol() {
+    let _counters = DOWNLOAD_COUNTERS.lock().await;
+    establish_counter_baseline().await;
     let before = get("/api/v1/cookbooks/redis").await.1;
     let response = app()
         .oneshot(
@@ -194,12 +267,17 @@ async fn download_redirects_and_counts_per_protocol() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status().as_u16(), 302);
+    let status = response.status().as_u16();
+    let location = response.headers().get("location").cloned();
+    let after = get("/api/v1/cookbooks/redis").await.1;
+    // Put the baseline back before asserting, so a failed assertion still
+    // leaves the seeded counters for whichever test runs next.
+    establish_counter_baseline().await;
+    assert_eq!(status, 302);
     assert_eq!(
-        response.headers().get("location").unwrap(),
+        location.unwrap(),
         "http://localhost:3000/system/cookbook_versions/tarballs/1/original/redis-1.0.0.tgz?1580515200"
     );
-    let after = get("/api/v1/cookbooks/redis").await.1;
     assert_ne!(before, after);
     assert!(after.contains(r#""total":6"#));
 }
@@ -359,6 +437,8 @@ async fn unimplemented_routes_still_answer_501() {
     assert_eq!(response.status().as_u16(), 400);
 
     // The signed web download redirects now that phase 7/8 covered it.
+    let _counters = DOWNLOAD_COUNTERS.lock().await;
+    establish_counter_baseline().await;
     let response = app()
         .oneshot(
             axum::http::Request::builder()
@@ -368,7 +448,9 @@ async fn unimplemented_routes_still_answer_501() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status().as_u16(), 302);
+    let status = response.status().as_u16();
+    establish_counter_baseline().await;
+    assert_eq!(status, 302);
 }
 
 #[allow(dead_code)]
