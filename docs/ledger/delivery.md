@@ -77,6 +77,13 @@ and the docs. `docs/copy-changes.md` lists every swap; the same list lives in
 - Full corpus green with these swaps, direct and through the proxy (same counts
   as in *Final verification*).
 
+## Chat feature switch
+
+The `/chat` redirects are opt-in: without `chat` in `FEATURES` all three routes
+answer the standard 404 page. The chat entries in `harness/corpus/phase7.yml`
+and `harness/corpus/routes.yml` assume the switch is on, because the Rails
+oracle always redirects; replay them with `chat` in `FEATURES`.
+
 ## Test isolation
 
 `tests/api.rs` shares one seeded schema across parallel cases. A download shifts

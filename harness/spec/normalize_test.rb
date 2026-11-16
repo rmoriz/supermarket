@@ -45,15 +45,29 @@ check("cookie ciphertext normalizes but the name does not") do
 end
 
 check("live redis counters normalize, other redis fields do not") do
-  one = Normalize.response(status: 200, headers: ha, raw_body: JSON.dump({ "redis" => { "connected_clients" => 3, "used_memory" => 1, "uptime_in_seconds" => 9 } }))
-  two = Normalize.response(status: 200, headers: ha, raw_body: JSON.dump({ "redis" => { "connected_clients" => 7, "used_memory" => 5, "uptime_in_seconds" => 9 } }))
-  three = Normalize.response(status: 200, headers: ha, raw_body: JSON.dump({ "redis" => { "connected_clients" => 7, "used_memory" => 5, "uptime_in_seconds" => 10 } }))
+  one = Normalize.response(status: 200, headers: ha, raw_body: JSON.dump({ "redis" => { "connected_clients" => 3, "used_memory_rss" => 1 } }))
+  two = Normalize.response(status: 200, headers: ha, raw_body: JSON.dump({ "redis" => { "connected_clients" => 7, "used_memory_rss" => 1 } }))
+  three = Normalize.response(status: 200, headers: ha, raw_body: JSON.dump({ "redis" => { "connected_clients" => 7, "used_memory_rss" => 2 } }))
   one == two && one != three
 end
 
 check("status differences survive") do
   Normalize.response(status: 200, headers: {}, raw_body: "x") !=
     Normalize.response(status: 404, headers: {}, raw_body: "x")
+end
+
+check("the port-only chat feature key is dropped from a features map") do
+  rails, = json_body({ "features" => { "tools" => true } })
+  rust, = json_body({ "features" => { "tools" => true, "chat" => false } })
+  Normalize.response(status: 200, headers: ha, raw_body: rails) ==
+    Normalize.response(status: 200, headers: ha, raw_body: rust)
+end
+
+check("chat outside a features map still differs") do
+  one, = json_body({ "channels" => { "chat" => 1 } })
+  two, = json_body({ "channels" => { "chat" => 2 } })
+  Normalize.response(status: 200, headers: ha, raw_body: one) !=
+    Normalize.response(status: 200, headers: ha, raw_body: two)
 end
 
 puts($failures.zero? ? "all normalize tests passed" : "#{$failures} failure(s)")

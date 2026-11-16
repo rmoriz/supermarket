@@ -107,6 +107,10 @@ module Normalize
     return text unless content_type.include?("json")
 
     document = JSON.parse(text)
+    # `chat` is a port-only switch; upstream hard-codes `Health::ALL_FEATURES`
+    # without it, so the oracle can never echo the key. The port's value is
+    # pinned by tests/chat.rs.
+    document["features"].delete("chat") if document.is_a?(Hash) && document["features"].is_a?(Hash)
     text = JSON.dump(scrub_json(document))
     text
   rescue JSON::ParserError

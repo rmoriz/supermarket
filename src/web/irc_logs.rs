@@ -1,7 +1,8 @@
 //! `IrcLogsController`: the chat log redirector.
 //!
 //! Every action is an external redirect to botbot.me or the old GitHub archive
-//! repository; an unparsable date is a 404. Both are route-level redirects.
+//! repository; an unparsable date is a 404. Both are route-level redirects. The
+//! `chat` feature switch 404s every action when it is off.
 
 use axum::extract::{Path, State};
 
@@ -24,8 +25,19 @@ fn external(url: &str) -> Response {
     response
 }
 
+/// The `chat` switch is port-only: upstream routes these unconditionally.
+async fn feature_off(state: &AppState, headers: &HeaderMap) -> Option<Response> {
+    if state.cfg.feature_active("chat") {
+        return None;
+    }
+    Some(not_found(state, headers).await)
+}
+
 /// `GET /chat`.
-pub async fn index() -> Response {
+pub async fn index(State(state): State<AppState>, headers: HeaderMap) -> Response {
+    if let Some(response) = feature_off(&state, &headers).await {
+        return response;
+    }
     external("https://botbot.me/freenode/chef/")
 }
 
@@ -124,7 +136,14 @@ fn split3(text: &str) -> Option<(&str, &str, &str)> {
 }
 
 /// `GET /chat/:channel` and `GET /chat/:channel/:date`.
-pub async fn show_channel(Path(channel): Path<String>) -> Response {
+pub async fn show_channel(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(channel): Path<String>,
+) -> Response {
+    if let Some(response) = feature_off(&state, &headers).await {
+        return response;
+    }
     external(&format!("{BOTBOT_BASE}{channel}"))
 }
 
@@ -133,6 +152,9 @@ pub async fn show_date(
     headers: HeaderMap,
     Path((channel, date)): Path<(String, String)>,
 ) -> Response {
+    if let Some(response) = feature_off(&state, &headers).await {
+        return response;
+    }
     let Some((year, month, day)) = parse_date(&date) else {
         return not_found(&state, &headers).await;
     };
@@ -145,7 +167,8 @@ pub async fn show_date(
 }
 
 /// `not_found!` renders `exceptions/404` from inside the controller, so the
-/// normal header stack applies; only the body class is the controller's.
+/// normal header stack applies; only the body class is the controller's. The
+/// switch-off page is the action's own 404.
 async fn not_found(state: &AppState, headers: &HeaderMap) -> Response {
     pages::error_page_as(state, headers, StatusCode::NOT_FOUND, false, "irc_logs").await
 }

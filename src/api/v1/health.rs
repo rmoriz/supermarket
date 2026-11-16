@@ -12,7 +12,14 @@ use crate::state::AppState;
 const REACHABLE: &str = "reachable";
 const UNKNOWN: &str = "unknown";
 const UNREACHABLE: &str = "unreachable";
-const ALL_FEATURES: [&str; 5] = ["tools", "fieri", "announcement", "github", "no_crawl"];
+const ALL_FEATURES: [&str; 6] = [
+    "tools",
+    "fieri",
+    "announcement",
+    "github",
+    "no_crawl",
+    "chat",
+];
 
 #[derive(Default)]
 struct Report {

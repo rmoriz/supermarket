@@ -206,6 +206,20 @@ mod tests {
         .unwrap();
         assert_eq!(cfg.api_item_limit, None);
         assert!(cfg.features.is_empty());
+        assert!(!cfg.feature_active("chat"));
+    }
+
+    #[test]
+    fn chat_is_opt_in() {
+        let cfg = Config::from_env_with(&fake(&[
+            ("DATABASE_URL", "pg"),
+            ("SECRET_KEY_BASE", "s"),
+            ("REDIS_URL", "r"),
+            ("FQDN", "x.test"),
+            ("FEATURES", "tools,chat"),
+        ]))
+        .unwrap();
+        assert!(cfg.feature_active("chat"));
     }
 
     #[test]

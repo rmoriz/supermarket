@@ -44,6 +44,10 @@ SECRET_KEY_BASE=<32+ bytes> \
 
 `/api/v1/health` and `/status` answer without auth.
 
+The chat log redirects under `/chat` are opt-in: name `chat` in the comma list
+`FEATURES` to serve them. With it absent — the default — all three routes answer
+the normal 404 page.
+
 Background jobs live in `target/release/supermarket-worker` (Sidekiq-compatible
 `queue:default`). It also carries the only ops task the app needs,
 `supermarket-worker spdx all|latest NAME|version NAME VERSION`, replacing

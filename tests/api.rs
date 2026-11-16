@@ -436,13 +436,12 @@ async fn unimplemented_routes_still_answer_501() {
         .unwrap();
     assert_eq!(response.status().as_u16(), 400);
 
-    // The signed web download redirects now that phase 7/8 covered it.
-    let _counters = DOWNLOAD_COUNTERS.lock().await;
-    establish_counter_baseline().await;
+    // The signed web download redirects now that phase 7/8 covered it. It uses
+    // a cookbook no counter case reads, so it needs no baseline.
     let response = app()
         .oneshot(
             axum::http::Request::builder()
-                .uri("/cookbooks/redis/versions/1.0.0/download")
+                .uri("/cookbooks/orphan/versions/2.0.0/download")
                 .body(Body::empty())
                 .unwrap(),
         )
