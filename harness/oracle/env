@@ -13,6 +13,7 @@ ALLOWED_HOSTS=127.0.0.1,localhost
 SECRET_KEY_BASE=oracle-secret-key-base-oracle-secret-key-base-0000
 
 FEATURES=tools,fieri,announcement
+RAILS_SERVE_STATIC_FILES=true
 ANNOUNCEMENT_TEXT=TEXT_VALUE
 ANNOUNCEMENT_BANNER=false
 ENFORCE_PRIVACY=true
@@ -42,3 +43,16 @@ FIERI_URL=http://localhost:13000/fieri/jobs
 FIERI_KEY=YOUR_FIERI_KEY
 FIERI_SUPERMARKET_ENDPOINT=http://localhost:13000
 COOKSTYLE_COPS=Chef/Deprecations,Chef/Correctness,Chef/Sharing,Chef/RedundantCode,Chef/Modernize,Chef/Security,InSpec/Deprecations
+
+# Artifact storage: the harness garage service. Path style because the endpoint
+# is a compose host name, not a bucket subdomain. The Rust harness process gets
+# the same values from harness/bin/up.
+S3_BUCKET=supermarket-test
+S3_REGION=garage
+S3_ACCESS_KEY_ID=GKsupermarketharnesskey0001
+S3_SECRET_ACCESS_KEY=8d1f4b2a6c9e0f3a5b7d1e4f6a8c0b2d4f6a8c0e2b4d6f8a0c2e4b6d8f0a2c4e
+S3_ENDPOINT=http://garage:3900
+S3_DOMAIN_STYLE=:s3_path_url
+S3_PATH=harness
+S3_PRIVATE_OBJECTS=true
+S3_URLS_EXPIRE=300

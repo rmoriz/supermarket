@@ -1,0 +1,22 @@
+# Garage, the S3 backend for the harness. Test-only: single node, local
+# replication factor 1, static credentials baked into the compose files so that
+# both the Rust port and the Rails oracle agree without an init step.
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "sqlite"
+
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+rpc_secret = "3f1a9c5e7b2d4a6c8e0f1a3b5c7d9e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[admin]
+api_bind_addr = "[::]:3903"
+admin_token = "supermarket-harness-garage-admin"
+metrics_token = "supermarket-harness-garage-metrics"

@@ -29,9 +29,12 @@ RUN gem install bundler -v 2.3.7 \
 
 COPY . .
 
-# Asset precompilation is best effort: the API does not depend on it, so a
-# failure only affects HTML page diffs and is logged, not fatal.
-RUN bundle _2.3.7_ exec rails assets:precompile || echo "asset precompile failed"
+# Asset precompilation is best effort: uglifier rejects the ES6 in the bundles,
+# so it normally fails. `public/assets` is therefore seeded from the repo's
+# prebuilt digest tree by a compose mount (`static/assets`); only the empty mount
+# target is needed here.
+RUN mkdir -p public/assets \
+    && (bundle _2.3.7_ exec rails assets:precompile || echo "asset precompile failed")
 
 EXPOSE 3001
 CMD ["bundle", "_2.3.7_", "exec", "unicorn", "-l", "0.0.0.0:3001", "-p", "3001"]

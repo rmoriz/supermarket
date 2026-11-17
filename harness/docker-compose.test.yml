@@ -9,6 +9,33 @@ services:
   redis:
     image: redis:7-alpine
     ports: ["56379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # S3 for artifact storage. `--single-node --default-bucket` gives a ready
+  # bucket with a fixed key pair, so no init container is needed; the app
+  # side reaches it with S3_ENDPOINT and path-style URLs.
+  garage:
+    image: dxflrs/garage:v2.5.0
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    environment:
+      GARAGE_ALLOW_WORLD_READABLE_SECRETS: "true"
+      GARAGE_DEFAULT_ACCESS_KEY: GKsupermarketharnesskey0001
+      GARAGE_DEFAULT_SECRET_KEY: 8d1f4b2a6c9e0f3a5b7d1e4f6a8c0b2d4f6a8c0e2b4d6f8a0c2e4b6d8f0a2c4e
+      GARAGE_DEFAULT_BUCKET: supermarket-test
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - garage-data:/var/lib/garage
+    ports: ["39000:3900"]
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   # The Rails oracle, used only for differential replay.
   oracle:
@@ -20,9 +47,18 @@ services:
     volumes:
       # Dotenv-overloaded .env; mounted so edits need no rebuild.
       - ./oracle/env:/app/.env:ro
+      # The repo's prebuilt digested assets and sprockets manifest. Upstream has
+      # no `public/` at all and `assets:precompile` dies on ES6 in uglifier, so
+      # the image would otherwise 500 on every page that renders a layout.
+      - ../static/assets:/app/public/assets:ro
     ports: ["3001:3001"]
     depends_on:
       postgres:
         condition: service_started
       redis:
         condition: service_started
+      garage:
+        condition: service_healthy
+
+volumes:
+  garage-data:
