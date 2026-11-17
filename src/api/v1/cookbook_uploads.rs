@@ -684,14 +684,14 @@ async fn publish(
         }
     };
 
-    let version_id: i32 = sqlx::query_scalar(
+    let (version_id, legacy_id): (i32, Option<i32>) = sqlx::query_as(
         "INSERT INTO cookbook_versions
            (cookbook_id, user_id, license, version, description, readme, readme_extension,
             changelog, changelog_extension, chef_versions, ohai_versions,
             tarball_file_name, tarball_content_type, tarball_file_size, tarball_updated_at,
             created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $16)
-         RETURNING id",
+         RETURNING id, legacy_id",
     )
     .bind(cookbook_id)
     .bind(user_id)
@@ -764,7 +764,7 @@ async fn publish(
     tx.commit().await.map_err(internal)?;
 
     if let Some(file_name) = tarball_file_name(&metadata.name, &metadata.version, is_file) {
-        write_tarball(version_id, None, tarball, &file_name);
+        write_tarball(state, version_id, legacy_id, tarball, &file_name).await?;
     }
 
     jobs::perform_async(state, "CookbookNotifyWorker", vec![json!(version_id)])
@@ -814,14 +814,58 @@ pub fn spdx_license_json() -> Value {
         .clone()
 }
 
-/// Paperclip filesystem storage: `public/system/cookbook_versions/tarballs/<id>/original/`.
-fn write_tarball(version_id: i32, legacy_id: Option<i32>, bytes: &[u8], file_name: &str) {
+/// Paperclip storage: `public/system/...` by default,
+/// `<bucket>/[S3_PATH/]cookbook_versions/tarballs/<legacy_id||id>/original/` when
+/// S3 is configured (`config/initializers/paperclip.rb`).
+async fn write_tarball(
+    state: &AppState,
+    version_id: i32,
+    legacy_id: Option<i32>,
+    bytes: &[u8],
+    file_name: &str,
+) -> Result<(), ApiError> {
     let id = legacy_id.unwrap_or(version_id);
-    let directory = std::path::Path::new("public/system/cookbook_versions/tarballs")
-        .join(id.to_string())
-        .join("original");
-    if std::fs::create_dir_all(&directory).is_ok() {
-        let _ = std::fs::write(directory.join(file_name), bytes);
+    match state.s3.as_deref() {
+        Some(s3) => s3
+            .put(
+                &s3.tarball_key(&id.to_string(), file_name),
+                bytes.to_vec(),
+                "application/gzip",
+            )
+            .await
+            .map_err(internal),
+        None => {
+            let directory = std::path::Path::new("public/system/cookbook_versions/tarballs")
+                .join(id.to_string())
+                .join("original");
+            if std::fs::create_dir_all(&directory).is_ok() {
+                let _ = std::fs::write(directory.join(file_name), bytes);
+            }
+            Ok(())
+        }
+    }
+}
+
+/// Paperclip's `flush_deletes`: drop the stored artifact. Missing objects and
+/// transport errors are ignored, exactly like the S3 branch upstream.
+async fn delete_tarball(state: &AppState, id: i32, file_name: Option<&str>) {
+    let Some(file_name) = file_name else {
+        return;
+    };
+    match state.s3.as_deref() {
+        Some(s3) => s3.delete(&s3.tarball_key(&id.to_string(), file_name)).await,
+        None => {
+            let _ = std::fs::remove_file(
+                std::path::Path::new("public/system/cookbook_versions/tarballs")
+                    .join(id.to_string())
+                    .join("original")
+                    .join(file_name),
+            );
+            let _ = std::fs::remove_dir_all(
+                std::path::Path::new("public/system/cookbook_versions/tarballs")
+                    .join(id.to_string()),
+            );
+        }
     }
 }
 
@@ -855,8 +899,20 @@ pub async fn destroy(
     // view body is built from the still-live records.
     let body = cookbook_body(&state, record.id).await?;
     let snapshot = cookbook_as_json(&state, record.id).await?;
+    // `dependent: :destroy` on `cookbook_versions` runs paperclip's delete hooks;
+    // collect the keys before the rows disappear.
+    let artifacts: Vec<(i32, Option<String>)> = sqlx::query_as(
+        "SELECT id, tarball_file_name FROM cookbook_versions WHERE cookbook_id = $1",
+    )
+    .bind(record.id)
+    .fetch_all(&state.db)
+    .await
+    .map_err(internal)?;
 
     delete_cookbook(&state, record.id).await?;
+    for (id, file_name) in &artifacts {
+        delete_tarball(&state, *id, file_name.as_deref()).await;
+    }
 
     jobs::perform_async(&state, "CookbookDeletionWorker", vec![snapshot])
         .await
@@ -926,10 +982,12 @@ struct DeletionView {
 
 async fn cookbook_body(state: &AppState, cookbook_id: i32) -> Result<Value, ApiError> {
     let row: Option<DeletionView> = sqlx::query_as(
-        "SELECT c.name, a.username, cat.name, c.source_url, c.issues_url,
-                v.description, c.created_at, c.updated_at, c.up_for_adoption,
+        "SELECT c.name AS name, a.username AS maintainer, cat.name AS category,
+                c.source_url AS source_url, c.issues_url AS issues_url,
+                v.description AS description, c.created_at AS created_at,
+                c.updated_at AS updated_at, c.up_for_adoption AS up_for_adoption,
                 (SELECT cv.version FROM cookbook_versions cv
-                  WHERE cv.cookbook_id = c.id ORDER BY cv.id DESC LIMIT 1)
+                  WHERE cv.cookbook_id = c.id ORDER BY cv.id DESC LIMIT 1) AS latest
            FROM cookbooks c
            JOIN users u ON u.id = c.user_id
            JOIN accounts a ON a.user_id = u.id AND a.provider = 'chef_oauth2'
@@ -1055,15 +1113,16 @@ pub async fn destroy_version(
     } else {
         Some(normalised)
     };
-    let found: Option<(i32, String)> = sqlx::query_as(
-        "SELECT id, version FROM cookbook_versions WHERE cookbook_id = $1 AND version = $2",
+    let found: Option<(i32, String, Option<String>)> = sqlx::query_as(
+        "SELECT id, version, tarball_file_name FROM cookbook_versions
+          WHERE cookbook_id = $1 AND version = $2",
     )
     .bind(record.id)
     .bind(wanted)
     .fetch_optional(&state.db)
     .await
     .map_err(internal)?;
-    let Some((version_id, version)) = found else {
+    let Some((version_id, version, tarball_file_name)) = found else {
         return Err(ApiError::NotFound);
     };
 
@@ -1122,6 +1181,7 @@ pub async fn destroy_version(
         .await
         .map_err(internal)?;
     tx.commit().await.map_err(internal)?;
+    delete_tarball(&state, version_id, tarball_file_name.as_deref()).await;
     jobs::flush_universe(&state).await;
 
     Ok(Json(body).into_response())

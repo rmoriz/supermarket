@@ -18,6 +18,7 @@ struct VersionRow {
     created_at: chrono::NaiveDateTime,
     file_name: Option<String>,
     tarball_updated_at: Option<chrono::NaiveDateTime>,
+    legacy_id: Option<i32>,
     /// Insertion order, exactly as the association loads them.
     platforms: Vec<(String, String)>,
     dependencies: Vec<(String, String)>,
@@ -48,7 +49,8 @@ async fn load_version(
     load_exact(state, cookbook, &normalised).await
 }
 
-/// version id, license, tarball size, created_at, tarball file name, tarball updated_at
+/// version id, license, tarball size, created_at, tarball file name,
+/// tarball updated_at, legacy id
 type VersionColumns = (
     i32,
     String,
@@ -56,6 +58,7 @@ type VersionColumns = (
     chrono::NaiveDateTime,
     Option<String>,
     Option<chrono::NaiveDateTime>,
+    Option<i32>,
 );
 
 async fn load_exact(
@@ -65,7 +68,7 @@ async fn load_exact(
 ) -> Result<VersionRow, ApiError> {
     let row: Option<VersionColumns> = sqlx::query_as(
         "SELECT id, license, tarball_file_size, created_at, tarball_file_name,
-                tarball_updated_at
+                tarball_updated_at, legacy_id
            FROM cookbook_versions
           WHERE cookbook_id = $1 AND version = $2",
     )
@@ -75,7 +78,8 @@ async fn load_exact(
     .await
     .map_err(internal)?;
 
-    let Some((id, license, size, created_at, file_name, tarball_updated_at)) = row else {
+    let Some((id, license, size, created_at, file_name, tarball_updated_at, legacy_id)) = row
+    else {
         return Err(ApiError::NotFound);
     };
 
@@ -107,23 +111,41 @@ async fn load_exact(
         created_at,
         file_name,
         tarball_updated_at,
+        legacy_id,
         platforms,
         dependencies,
     })
 }
 
-/// Paperclip file-system URL: `...?<mtime epoch>`, the cache buster it appends.
-pub fn artifact_url(
+/// `CookbookVersion#cookbook_artifact_url`: the paperclip URL, a presigned one
+/// when `S3_URLS_EXPIRE` is set. Filesystem URLs carry the `?<mtime epoch>`
+/// cache buster paperclip appends; presigned URLs never do.
+pub async fn artifact_url(
     state: &AppState,
-    version_id_hint: &str,
+    version_id: i32,
+    legacy_id: Option<i32>,
     file_name: &str,
     updated_at: Option<chrono::NaiveDateTime>,
 ) -> String {
+    let id = legacy_id.unwrap_or(version_id);
+    if let Some(s3) = state.s3.as_deref() {
+        let key = s3.tarball_key(&id.to_string(), file_name);
+        if let Some(expires_in) = state.cfg.s3.as_ref().and_then(|config| config.url_expiry) {
+            return s3
+                .presigned_get(&key, expires_in)
+                .await
+                .unwrap_or_else(|_| s3.url(&key));
+        }
+        let cache_buster = updated_at
+            .map(|value| format!("?{}", value.and_utc().timestamp()))
+            .unwrap_or_default();
+        return format!("{}{cache_buster}", s3.url(&key));
+    }
     let base = state.cfg.base_url();
     let cache_buster = updated_at
         .map(|value| format!("?{}", value.and_utc().timestamp()))
         .unwrap_or_default();
-    format!("{base}/system/cookbook_versions/tarballs/{version_id_hint}/original/{file_name}{cache_buster}")
+    format!("{base}/system/cookbook_versions/tarballs/{id}/original/{file_name}{cache_buster}")
 }
 
 pub async fn show(
@@ -240,10 +262,12 @@ pub async fn download(
     let file_name = found.file_name.unwrap_or_else(|| "tarball.tgz".to_owned());
     let target = artifact_url(
         &state,
-        &version_id.to_string(),
+        version_id,
+        found.legacy_id,
         &file_name,
         found.tarball_updated_at,
-    );
+    )
+    .await;
     // Rails `redirect_to` answers 302, not the 303 axum's Redirect emits.
     Ok((
         axum::http::StatusCode::FOUND,

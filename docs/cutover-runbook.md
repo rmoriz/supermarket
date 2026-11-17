@@ -89,20 +89,24 @@ Always one config edit and a strangle restart, no deploy:
 
 Because the schema never diverged, a rollback needs no data repair. Uploaded
 artifacts stay where the database says they are and rows stay in Postgres; both
-apps read them. The port writes to `public/system`, which is also paperclip's
-filesystem path — but it does not speak S3 yet, so a deployment that sets
-`S3_BUCKET`/`S3_REGION` would have Rust and Rails writing to different storage
-layers (see [`known-gaps.md`](known-gaps.md)).
+apps read the same storage. Without `S3_BUCKET`/`S3_REGION` that is
+`public/system`, paperclip's own filesystem path, so the two share a directory
+and each reads what the other wrote. With the pair set, both use the same bucket,
+key layout, ACL and URL shape, so a rollback keeps resolving every artifact.
+`S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` must be set on both sides or on
+neither; otherwise one side talks to the bucket with static keys and the other
+through its instance role.
 
 ## 5. S3 grace period
 
-With S3 storage the bucket lifecycle rule keeps orphans for 30 days. Today's
-build stores artifacts on the filesystem instead, so the grace period is just
-"do not prune `public/system`": the port deletes no objects at all — not even
-tarball files — which keeps a rollback past the window lossless even for deleted
-versions. Once S3 support lands, deletion must become a real object DELETE like
-paperclip's `flush_deletes`, so the bucket needs versioning or a lifecycle rule
-before that release to keep the same property.
+Both backends delete the object when a version or a cookbook is destroyed
+(paperclip's `flush_deletes`, and the port's `delete_tarball` on both destroy
+paths), so a deleted version loses its artifact on either side. For the window
+to survive a rollback, turn bucket versioning on and keep noncurrent versions
+for 30 days with a lifecycle rule before switching traffic: the new backend's
+delete then only writes a delete marker and the old one's objects are still
+recoverable. Without versioning a delete is final, exactly as it is on the
+filesystem — there the grace period is only "do not prune `public/system`".
 
 ## 6. Proxy removal
 

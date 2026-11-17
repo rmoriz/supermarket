@@ -6,6 +6,7 @@ use cadence::{NopMetricSink, StatsdClient};
 use sqlx::PgPool;
 
 use crate::config::Config;
+use crate::storage::S3;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -15,6 +16,8 @@ pub struct AppState {
     /// The Sidekiq queue, which may live on its own server (`REDIS_JOBQ_URL`).
     pub redis_jobs: redis::Client,
     pub cfg: Arc<Config>,
+    /// S3 storage when `S3_BUCKET`/`S3_REGION` are set; the filesystem otherwise.
+    pub s3: Option<Arc<S3>>,
     pub http: reqwest::Client,
     pub statsd: Arc<StatsdClient>,
 }
@@ -27,11 +30,16 @@ impl AppState {
         };
         let redis_jobs =
             redis::Client::open(cfg.redis_jobq_url.clone()).expect("job queue redis client");
+        let s3 = cfg
+            .s3
+            .as_ref()
+            .map(|config| Arc::new(S3::from_config(config, &cfg.protocol)));
         AppState {
             db,
             redis,
             redis_jobs,
             cfg,
+            s3,
             http: reqwest::Client::builder().build().expect("reqwest client"),
             statsd: Arc::new(statsd),
         }

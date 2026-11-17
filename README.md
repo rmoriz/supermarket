@@ -44,16 +44,16 @@ SECRET_KEY_BASE=<32+ bytes> \
 
 `/api/v1/health` and `/status` answer without auth.
 
-The chat log redirects under `/chat` are opt-in: name `chat` in the comma list
-`FEATURES` to serve them. With it absent — the default — all three routes answer
-the normal 404 page.
+The chat log redirects under `/chat` are unconditional, as in upstream's
+`routes.rb`; the port-only `chat` feature key only adds an entry to the health
+report.
 
 Background jobs live in `target/release/supermarket-worker` (Sidekiq-compatible
 `queue:default`). It also carries the only ops task the app needs,
 `supermarket-worker spdx all|latest NAME|version NAME VERSION`, replacing
 `rake update_spdx_license:run:*`. Uploads go to `public/system` and need that
-directory writable; `S3_BUCKET`/`S3_REGION` are parsed but S3 storage is not
-implemented yet (see [`docs/known-gaps.md`](docs/known-gaps.md)).
+directory writable, or to S3 when `S3_BUCKET` and `S3_REGION` are set (see
+below and [`docs/known-gaps.md`](docs/known-gaps.md)).
 
 `REDIS_JOBQ_URL` puts the Sidekiq queue on its own Redis (falls back to
 `REDIS_URL`); the universe cache stays on `REDIS_URL`. `STATSD_URL` plus
@@ -62,6 +62,23 @@ implemented yet (see [`docs/known-gaps.md`](docs/known-gaps.md)).
 and `AIR_GAPPED=true` drops them plus the Google Fonts link. `ALLOWED_HOSTS`
 with `DISABLE_HOST_HEADER_ATTACK=true` turns on the host allowlist, and
 `CHEF_OAUTH2_VERIFY_SSL=false` accepts a self-signed id server certificate.
+
+### Artifact storage
+
+Setting `S3_BUCKET` and `S3_REGION` moves tarballs from `public/system` to a
+bucket, using paperclip's key layout
+(`[S3_PATH/]cookbook_versions/tarballs/<legacy_id||id>/original/<file>`) and its
+write/delete semantics. Setting only one of the pair refuses to boot with
+upstream's `IncompleteConfig` message. `S3_ACCESS_KEY_ID` and
+`S3_SECRET_ACCESS_KEY` are a pair too: with both set they are used as static
+keys, with neither the SDK default chain (IAM role, ECS task role, IMDS) applies.
+`S3_PRIVATE_OBJECTS=true` switches the ACL from `public-read` to `private`,
+`S3_ENCRYPTION` sends `x-amz-server-side-encryption`, `S3_URLS_EXPIRE` turns
+artifact URLs into presigned GETs instead of plain ones, `S3_DOMAIN_STYLE`
+selects `:s3_domain_url` (default), `:s3_path_url` or `:s3_alias_url`, and
+`CDN_URL` forces the alias style against that host. `S3_ENDPOINT` points at a
+non-AWS endpoint and switches the client to path-style addressing. The bucket is
+created on the first `NoSuchBucket` write.
 
 ## Parity harness
 

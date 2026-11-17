@@ -210,10 +210,30 @@ module Normalize
   ORACLE_ORIGIN = %r{https?://127\.0\.0\.1:3001}.freeze
   TARGET_ORIGIN = "http://localhost:3005".freeze
 
+  # The Rust harness process runs on the host, so it reaches garage through the
+  # published port; the oracle runs in the compose network. Both name the same
+  # bucket, so map the host-side endpoint back onto the service name.
+  HOST_S3_ENDPOINT = %r{https?://127\.0\.0\.1:39000}.freeze
+  SERVICE_S3_ENDPOINT = "http://garage:3900".freeze
+
   def origin(text)
     return nil if text.nil?
 
-    text.gsub(ORACLE_ORIGIN, TARGET_ORIGIN)
+    signed_query(
+      text.gsub(ORACLE_ORIGIN, TARGET_ORIGIN).gsub(HOST_S3_ENDPOINT, SERVICE_S3_ENDPOINT),
+    )
+  end
+
+  # Presigned S3 URLs differ per request in every `X-Amz-*` value and in the
+  # signature. Dropping those parameters keeps the path and any cache buster
+  # comparable. Garage's own unsigned URLs never carry the prefix.
+  def signed_query(text)
+    text.gsub(/(\?)([^#\s"]+)/) do
+      kept = Regexp.last_match(2)
+        .split("&")
+        .reject { |pair| pair.start_with?("X-Amz-", "x-id=") }
+      kept.empty? ? "" : "?#{kept.join('&')}"
+    end
   end
 
   # Full response normal form.

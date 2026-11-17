@@ -409,7 +409,7 @@ pub fn number_with_delimiter(value: i64) -> String {
     let text = value.to_string();
     let mut out = String::new();
     for (index, ch) in text.chars().enumerate() {
-        if index > 0 && (text.len() - index) % 3 == 0 {
+        if index > 0 && (text.len() - index).is_multiple_of(3) {
             out.push(',');
         }
         out.push(ch);

@@ -244,6 +244,15 @@ async fn cookbook_deprecated(state: &AppState, cookbook_id: i32) {
     }
 }
 
+/// cookbook name, version, tarball file name, legacy id, tarball updated_at
+type NotifyRow = (
+    String,
+    String,
+    Option<String>,
+    Option<i32>,
+    Option<chrono::NaiveDateTime>,
+);
+
 /// `FieriNotifyWorker`.
 async fn fieri_notify(state: &AppState, version_id: i32) {
     let (Some(url), Some(key)) = (
@@ -252,24 +261,28 @@ async fn fieri_notify(state: &AppState, version_id: i32) {
     ) else {
         return;
     };
-    let row: Option<(String, String, String)> = sqlx::query_as(
-        "SELECT c.name, v.version, c.name FROM cookbook_versions v
-           JOIN cookbooks c ON c.id = v.cookbook_id WHERE v.id = $1",
+    let row: Option<NotifyRow> = sqlx::query_as(
+        "SELECT c.name, v.version, v.tarball_file_name, v.legacy_id, v.tarball_updated_at
+               FROM cookbook_versions v JOIN cookbooks c ON c.id = v.cookbook_id
+              WHERE v.id = $1",
     )
     .bind(version_id)
     .fetch_optional(&state.db)
     .await
     .ok()
     .flatten();
-    let Some((name, version, _)) = row else {
+    let Some((name, version, file_name, legacy_id, updated_at)) = row else {
         return;
     };
-    let artifact = format!(
-        "{}/api/v1/cookbooks/{}/versions/{}/download",
-        state.cfg.base_url(),
-        name,
-        version
-    );
+    // `CookbookVersion#cookbook_artifact_url`, not the /download endpoint.
+    let artifact = crate::api::v1::cookbook_versions::artifact_url(
+        state,
+        version_id,
+        legacy_id,
+        file_name.as_deref().unwrap_or("tarball.tgz"),
+        updated_at,
+    )
+    .await;
     let body = json!({
         "fieri_key": key,
         "cookbook": { "name": name, "version": version, "artifact_url": artifact },

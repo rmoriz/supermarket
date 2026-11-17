@@ -761,10 +761,10 @@ pub async fn download_version(
                 .unwrap_or_default();
         }
     }
-    let row: Option<(i32, i32, Option<String>, Option<chrono::NaiveDateTime>)> = sqlx::query_as(
-        "SELECT c.id, v.id, v.tarball_file_name, v.tarball_updated_at
-           FROM cookbooks c JOIN cookbook_versions v ON v.cookbook_id = c.id
-          WHERE c.lowercase_name = $1 AND v.version = $2",
+    let row: Option<DownloadRow> = sqlx::query_as(
+        "SELECT c.id, v.id, v.tarball_file_name, v.tarball_updated_at, v.legacy_id
+               FROM cookbooks c JOIN cookbook_versions v ON v.cookbook_id = c.id
+              WHERE c.lowercase_name = $1 AND v.version = $2",
     )
     .bind(name.to_lowercase())
     .bind(&resolved)
@@ -773,7 +773,7 @@ pub async fn download_version(
     .ok()
     .flatten();
 
-    let Some((cookbook_id, version_id, file_name, updated_at)) = row else {
+    let Some((cookbook_id, version_id, file_name, updated_at, legacy_id)) = row else {
         return pages::error_page_as(
             &state,
             &headers,
@@ -802,11 +802,9 @@ pub async fn download_version(
 
     let file_name = file_name.unwrap_or_else(|| "tarball.tgz".to_owned());
     let artifact = crate::api::v1::cookbook_versions::artifact_url(
-        &state,
-        &version_id.to_string(),
-        &file_name,
-        updated_at,
-    );
+        &state, version_id, legacy_id, &file_name, updated_at,
+    )
+    .await;
     let mut response = StatusCode::FOUND.into_response();
     if let Ok(value) = artifact.parse() {
         response.headers_mut().insert(header::LOCATION, value);
@@ -1460,6 +1458,15 @@ fn inline(text: &str) -> String {
     }
     rebuilt
 }
+
+/// cookbook id, version id, tarball file name, tarball updated_at, legacy id
+type DownloadRow = (
+    i32,
+    i32,
+    Option<String>,
+    Option<chrono::NaiveDateTime>,
+    Option<i32>,
+);
 
 pub async fn download(State(state): State<AppState>, Path(name): Path<String>) -> Response {
     let row: Option<(String, String)> = sqlx::query_as(

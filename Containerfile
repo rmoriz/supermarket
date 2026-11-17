@@ -7,7 +7,7 @@ FROM ${MW_IMAGE} AS microwave
 
 # Release build. The locale YAML and SPDX licence list are the only Rails files
 # the crate reads at compile time.
-FROM rust:1.90-trixie AS builder
+FROM rust:1.94-trixie AS builder
 WORKDIR /build
 COPY Cargo.toml Cargo.lock build.rs askama.toml ./
 COPY src ./src

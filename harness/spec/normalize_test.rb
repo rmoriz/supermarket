@@ -70,5 +70,30 @@ check("chat outside a features map still differs") do
     Normalize.response(status: 200, headers: ha, raw_body: two)
 end
 
+check("the host-side garage endpoint normalizes to the service name") do
+  host, = json_body({ "file" => "http://127.0.0.1:39000/supermarket-test/harness/x.tgz" })
+  service, = json_body({ "file" => "http://garage:3900/supermarket-test/harness/x.tgz" })
+  Normalize.response(status: 302, headers: ha, raw_body: host) ==
+    Normalize.response(status: 302, headers: ha, raw_body: service)
+end
+
+check("presigned query parameters normalize but the cache buster survives") do
+  one, = json_body(
+    { "file" => "http://garage:3900/b/harness/x.tgz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260101T000000Z&X-Amz-Signature=aaa" },
+  )
+  two, = json_body(
+    { "file" => "http://garage:3900/b/harness/x.tgz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261111T111111Z&X-Amz-Signature=bbb" },
+  )
+  Normalize.response(status: 302, headers: ha, raw_body: one) ==
+    Normalize.response(status: 302, headers: ha, raw_body: two)
+end
+
+check("an appended cache buster still differs after signing is dropped") do
+  one, = json_body({ "file" => "http://garage:3900/b/x.tgz?X-Amz-Signature=a&1580515200" })
+  two, = json_body({ "file" => "http://garage:3900/b/x.tgz?X-Amz-Signature=a&1580515299" })
+  Normalize.response(status: 302, headers: ha, raw_body: one) !=
+    Normalize.response(status: 302, headers: ha, raw_body: two)
+end
+
 puts($failures.zero? ? "all normalize tests passed" : "#{$failures} failure(s)")
 exit($failures.zero? ? 0 : 1)

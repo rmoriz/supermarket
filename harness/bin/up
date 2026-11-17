@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-# Brings up the harness: Postgres, Redis, the Rust port, seeds both databases.
-# The Rails oracle is started separately (bin/rails server) because it needs a full
-# bundle; RAILS_URL points the replayer at it.
+# Brings up the harness: Postgres, Redis, garage (S3), the Rust port, seeds both
+# databases. The Rails oracle is started separately (bin/rails server) because it
+# needs a full bundle; RAILS_URL points the replayer at it.
 require "open3"
 
 ROOT = File.expand_path("../..", __dir__)
@@ -15,7 +15,23 @@ run("docker", "compose", "-f", "harness/docker-compose.test.yml", "up", "-d", "-
 run(File.join(ROOT, "harness/bin/seed"))
 
 pid = spawn(
-  { "RUST_LOG" => "info" },
+  {
+    "RUST_LOG" => "info",
+    # Same bucket as the oracle, reached through the published port (39000 on the
+    # host, 3900 in the network) because this process runs on the host. Garage
+    # ignores object ACLs and 403s anonymous reads, hence the private ACL plus a
+    # presigned URL: the corpus still compares both sides' redirect targets.
+    "S3_BUCKET" => "supermarket-test",
+    "S3_REGION" => "garage",
+    "S3_ACCESS_KEY_ID" => "GKsupermarketharnesskey0001",
+    "S3_SECRET_ACCESS_KEY" =>
+      "8d1f4b2a6c9e0f3a5b7d1e4f6a8c0b2d4f6a8c0e2b4d6f8a0c2e4b6d8f0a2c4e",
+    "S3_ENDPOINT" => "http://127.0.0.1:39000",
+    "S3_DOMAIN_STYLE" => ":s3_path_url",
+    "S3_PATH" => "harness",
+    "S3_PRIVATE_OBJECTS" => "true",
+    "S3_URLS_EXPIRE" => "300",
+  },
   "cargo", "run", "--bin", "supermarket-rs",
   chdir: ROOT,
   out: File.join(ROOT, "harness/rust.log"),

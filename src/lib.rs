@@ -15,6 +15,7 @@ pub mod query;
 pub mod routes;
 pub mod session;
 pub mod state;
+pub mod storage;
 pub mod upload;
 pub mod views;
 pub mod web;

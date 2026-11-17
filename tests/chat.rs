@@ -1,5 +1,6 @@
-//! The `chat` switch: the redirect routes answer the standard 404 unless
-//! `FEATURES` names `chat`, and stay byte-identical when it does.
+//! The chat log redirects. Upstream routes them unconditionally, so the routes
+//! answer with or without `chat` in `FEATURES`; the key only shows up in the
+//! health report as a port-only feature.
 //!
 //! The suite seeds nothing of its own: `tests/api.rs` truncates and reseeds the
 //! shared database in another process, and a second seeder would race it.
@@ -58,19 +59,17 @@ fn location(headers: &HeaderMap) -> &str {
 }
 
 #[tokio::test]
-async fn default_off_answers_404_everywhere() {
-    for path in ["/chat", "/chat/chef", "/chat/chef/2013-08-07"] {
-        let (status, headers, body) = get("tools,fieri", path).await;
-        assert_eq!(status, 404, "{path}");
-        assert!(
-            headers.get(axum::http::header::LOCATION).is_none(),
-            "{path}"
-        );
-        assert!(
-            body.contains("The page you were looking for does not exist."),
-            "{path}"
-        );
-    }
+async fn redirects_without_the_feature_key() {
+    let (status, headers, _) = get("tools,fieri", "/chat").await;
+    assert_eq!(status, 302);
+    assert_eq!(location(&headers), "https://botbot.me/freenode/chef/");
+
+    let (status, headers, _) = get("tools,fieri", "/chat/chef/2014-09-24").await;
+    assert_eq!(status, 302);
+    assert_eq!(
+        location(&headers),
+        "https://botbot.me/freenode/chef/2014-09-24"
+    );
 }
 
 #[tokio::test]

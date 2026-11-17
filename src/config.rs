@@ -6,6 +6,20 @@ use std::os::unix::ffi::OsStrExt;
 pub struct S3Config {
     pub bucket: String,
     pub region: String,
+    pub access_key_id: Option<String>,
+    pub secret_access_key: Option<String>,
+    /// `S3_PATH`, the key prefix.
+    pub path: Option<String>,
+    /// `S3_PRIVATE_OBJECTS`: `private` ACL instead of paperclip's `public-read`.
+    pub private_objects: bool,
+    /// `S3_ENCRYPTION`, sent as `x-amz-server-side-encryption`.
+    pub encryption: Option<String>,
+    /// `S3_ENDPOINT`: custom endpoint, plus forced path-style addressing.
+    pub endpoint: Option<String>,
+    /// `S3_DOMAIN_STYLE`, paperclip's URL template.
+    pub domain_style: Option<String>,
+    /// `CDN_URL`, which wins over `S3_DOMAIN_STYLE`.
+    pub cdn_url: Option<String>,
     pub url_expiry: Option<u64>,
 }
 
@@ -48,6 +62,8 @@ pub struct Config {
 pub struct ConfigError {
     pub var: &'static str,
     pub kind: ConfigErrorKind,
+    /// Full message when the error needs more than the variable name.
+    pub detail: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -55,17 +71,27 @@ pub enum ConfigErrorKind {
     Missing,
     NotUnicode,
     IncompleteS3,
+    IncompleteS3Credentials,
 }
 
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(detail) = &self.detail {
+            return f.write_str(detail);
+        }
         match self.kind {
             ConfigErrorKind::Missing => write!(f, "{} is not set", self.var),
             ConfigErrorKind::NotUnicode => write!(f, "{} is not valid UTF-8", self.var),
-            ConfigErrorKind::IncompleteS3 => write!(
+            ConfigErrorKind::IncompleteS3 => {
+                write!(
+                    f,
+                    "{} is set but S3_BUCKET and S3_REGION must both be set",
+                    self.var
+                )
+            }
+            ConfigErrorKind::IncompleteS3Credentials => write!(
                 f,
-                "{} is set but S3_BUCKET and S3_REGION must both be set",
-                self.var
+                "S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY must both be set or both absent"
             ),
         }
     }
@@ -82,12 +108,72 @@ fn required(
         _ => Err(ConfigError {
             var,
             kind: ConfigErrorKind::Missing,
+            detail: None,
         }),
     }
 }
 
 fn optional(env: &dyn Fn(&str) -> Option<String>, var: &str) -> Option<String> {
     env(var).filter(|v| !v.is_empty())
+}
+
+/// `Supermarket::S3Config.use_s3?`: a present-but-incomplete pair refuses to
+/// boot, a complete pair switches storage to S3.
+fn s3_from_env(env: &dyn Fn(&str) -> Option<String>) -> Result<Option<S3Config>, ConfigError> {
+    let bucket = optional(env, "S3_BUCKET");
+    let region = optional(env, "S3_REGION");
+    let provided: Vec<&str> = ["S3_BUCKET", "S3_REGION"]
+        .into_iter()
+        .filter(|var| env(var).is_some())
+        .collect();
+    if provided.is_empty() {
+        return Ok(None);
+    }
+    if bucket.is_none() || region.is_none() {
+        return Err(ConfigError {
+            var: "S3_BUCKET",
+            kind: ConfigErrorKind::IncompleteS3,
+            detail: Some(format!(
+                "Got some, but not all, of the required S3 configs. You provided: {provided:?}. \
+                 You must provide [\"S3_BUCKET\", \"S3_REGION\"] to configure cookbook storage \
+                 in an S3 bucket."
+            )),
+        });
+    }
+
+    let access_key_id = optional(env, "S3_ACCESS_KEY_ID");
+    let secret_access_key = optional(env, "S3_SECRET_ACCESS_KEY");
+    let credentials_provided: Vec<&str> = ["S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]
+        .into_iter()
+        .filter(|var| env(var).is_some())
+        .collect();
+    if !credentials_provided.is_empty() && (access_key_id.is_none() || secret_access_key.is_none())
+    {
+        return Err(ConfigError {
+            var: "S3_ACCESS_KEY_ID",
+            kind: ConfigErrorKind::IncompleteS3Credentials,
+            detail: Some(
+                "Got some, but not all, of AWS user credentials. To access an S3 bucket with \
+                 IAM user credentials, provide [\"S3_ACCESS_KEY_ID\", \"S3_SECRET_ACCESS_KEY\"]. \
+                 To use an IAM role, do not set these."
+                    .to_owned(),
+            ),
+        });
+    }
+
+    Ok(Some(S3Config {
+        bucket: bucket.expect("checked above"),
+        region: region.expect("checked above"),
+        access_key_id,
+        secret_access_key,
+        path: optional(env, "S3_PATH"),
+        private_objects: env("S3_PRIVATE_OBJECTS").as_deref() == Some("true"),
+        encryption: optional(env, "S3_ENCRYPTION"),
+        endpoint: optional(env, "S3_ENDPOINT"),
+        domain_style: optional(env, "S3_DOMAIN_STYLE"),
+        cdn_url: optional(env, "CDN_URL"),
+        url_expiry: optional(env, "S3_URLS_EXPIRE").map(|value| value.parse().unwrap_or(0)),
+    }))
 }
 
 /// `ActiveModel::Type::Boolean` accepts these spellings as true.
@@ -135,20 +221,7 @@ impl Config {
             })
             .unwrap_or_default();
 
-        let s3 = match (optional(env, "S3_BUCKET"), optional(env, "S3_REGION")) {
-            (Some(bucket), Some(region)) => Some(S3Config {
-                bucket,
-                region,
-                url_expiry: optional(env, "S3_URLS_EXPIRE").and_then(|v| v.parse().ok()),
-            }),
-            (None, None) => None,
-            _ => {
-                return Err(ConfigError {
-                    var: "S3_BUCKET",
-                    kind: ConfigErrorKind::IncompleteS3,
-                })
-            }
-        };
+        let s3 = s3_from_env(env)?;
 
         Ok(Config {
             database_url,
@@ -292,6 +365,92 @@ mod tests {
         ]))
         .unwrap_err();
         assert_eq!(err.kind, ConfigErrorKind::IncompleteS3);
+        assert_eq!(
+            err.to_string(),
+            "Got some, but not all, of the required S3 configs. You provided: [\"S3_BUCKET\"]. \
+             You must provide [\"S3_BUCKET\", \"S3_REGION\"] to configure cookbook storage in an \
+             S3 bucket."
+        );
+    }
+
+    #[test]
+    fn one_s3_credential_is_an_error() {
+        let err = Config::from_env_with(&fake(&[
+            ("DATABASE_URL", "pg"),
+            ("SECRET_KEY_BASE", "s"),
+            ("REDIS_URL", "r"),
+            ("FQDN", "x.test"),
+            ("S3_BUCKET", "b"),
+            ("S3_REGION", "r"),
+            ("S3_ACCESS_KEY_ID", "id"),
+        ]))
+        .unwrap_err();
+        assert_eq!(err.kind, ConfigErrorKind::IncompleteS3Credentials);
+        assert!(err
+            .to_string()
+            .starts_with("Got some, but not all, of AWS user credentials."));
+    }
+
+    #[test]
+    fn an_empty_s3_bucket_still_counts_as_configured() {
+        let err = Config::from_env_with(&fake(&[
+            ("DATABASE_URL", "pg"),
+            ("SECRET_KEY_BASE", "s"),
+            ("REDIS_URL", "r"),
+            ("FQDN", "x.test"),
+            ("S3_BUCKET", ""),
+            ("S3_REGION", "r"),
+        ]))
+        .unwrap_err();
+        assert_eq!(err.kind, ConfigErrorKind::IncompleteS3);
+    }
+
+    #[test]
+    fn the_full_s3_matrix_is_parsed() {
+        let cfg = Config::from_env_with(&fake(&[
+            ("DATABASE_URL", "pg"),
+            ("SECRET_KEY_BASE", "s"),
+            ("REDIS_URL", "r"),
+            ("FQDN", "x.test"),
+            ("PROTOCOL", "https"),
+            ("S3_BUCKET", "b"),
+            ("S3_REGION", "garage"),
+            ("S3_ACCESS_KEY_ID", "id"),
+            ("S3_SECRET_ACCESS_KEY", "secret"),
+            ("S3_PATH", "harness"),
+            ("S3_PRIVATE_OBJECTS", "true"),
+            ("S3_ENCRYPTION", "AES256"),
+            ("S3_ENDPOINT", "http://garage:3900"),
+            ("S3_DOMAIN_STYLE", ":s3_path_url"),
+            ("CDN_URL", "https://cdn.example.com"),
+            ("S3_URLS_EXPIRE", "900"),
+        ]))
+        .unwrap();
+        let s3 = cfg.s3.expect("s3 configured");
+        assert_eq!(s3.bucket, "b");
+        assert_eq!(s3.region, "garage");
+        assert_eq!(s3.access_key_id.as_deref(), Some("id"));
+        assert_eq!(s3.secret_access_key.as_deref(), Some("secret"));
+        assert_eq!(s3.path.as_deref(), Some("harness"));
+        assert!(s3.private_objects);
+        assert_eq!(s3.encryption.as_deref(), Some("AES256"));
+        assert_eq!(s3.endpoint.as_deref(), Some("http://garage:3900"));
+        assert_eq!(s3.domain_style.as_deref(), Some(":s3_path_url"));
+        assert_eq!(s3.cdn_url.as_deref(), Some("https://cdn.example.com"));
+        assert_eq!(s3.url_expiry, Some(900));
+    }
+
+    #[test]
+    fn s3_stays_off_without_the_pair() {
+        let cfg = Config::from_env_with(&fake(&[
+            ("DATABASE_URL", "pg"),
+            ("SECRET_KEY_BASE", "s"),
+            ("REDIS_URL", "r"),
+            ("FQDN", "x.test"),
+            ("S3_PATH", "harness"),
+        ]))
+        .unwrap();
+        assert!(cfg.s3.is_none());
     }
 
     #[test]

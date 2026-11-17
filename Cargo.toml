@@ -2,7 +2,7 @@
 name = "supermarket-rs"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.94"
 publish = false
 description = "Wire-compatible Rust port of the Chef Supermarket Rails application"
 license = "AGPL-3.0-only"
@@ -44,6 +44,8 @@ uuid = { version = "1", features = ["v4"] }
 askama = { version = "0.16", features = ["config"] }
 pulldown-cmark = "0.13.6"
 lettre = { version = "0.11.23", default-features = false, features = ["smtp-transport", "builder", "hostname", "pool", "rustls-tls"] }
+aws-config = "1.8.11"
+aws-sdk-s3 = "1.96.0"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }

@@ -29,6 +29,12 @@
   sign: ada
   observe: [jobs, cache]
 
+- name: an admin deletes a cookbook that has no category
+  method: DELETE
+  path: /api/v1/cookbooks/orphan
+  reset: true
+  sign: ada
+
 - name: an unknown version is a 404
   method: DELETE
   path: /api/v1/cookbooks/redis/versions/9.9.9
