@@ -98,9 +98,11 @@ layers (see [`known-gaps.md`](known-gaps.md)).
 
 With S3 storage the bucket lifecycle rule keeps orphans for 30 days. Today's
 build stores artifacts on the filesystem instead, so the grace period is just
-"do not prune `public/system`": the deletion worker writes tombstones/rows but
-leaves the files alone, which keeps a rollback past the window lossless even
-for deleted versions.
+"do not prune `public/system`": the port deletes no objects at all — not even
+tarball files — which keeps a rollback past the window lossless even for deleted
+versions. Once S3 support lands, deletion must become a real object DELETE like
+paperclip's `flush_deletes`, so the bucket needs versioning or a lifecycle rule
+before that release to keep the same property.
 
 ## 6. Proxy removal
 
