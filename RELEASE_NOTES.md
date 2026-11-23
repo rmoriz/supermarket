@@ -1,38 +1,46 @@
 # Unreleased
 
-Dependency and security maintenance for Supermarket. No feature changes.
+Dependency and maintenance work for Supermarket.
 
 ## Security fixes
 
 `bundle-audit` reports no vulnerabilities for the application and the
 fieri engine after this branch. The npm audit is clean too.
 
-- **Rails 8.0.5.2** (from 7.2.4): Active Storage arbitrary file write/read
+- **Rails 8.1.4.1** (from 7.2.4): Active Storage arbitrary file write/read
   and RCE through video previews and image analysis, Strong Parameters
   bypass in `Parameters#each_key`, XSS in Action View text/tag/highlight
   helpers and `strip_tags`, Active Support `safe_constantize` DoS,
   session restoration and missing SameSite handling in the cache store,
-  Session Fixation in the cookie jar and a batch of lower-severity
-  Action Pack, Action Mailbox and Active Storage issues.
+  Session Fixation in the cookie jar, the 8.1.4.1 advisories and a batch
+  of lower-severity Action Pack, Action Mailbox and Active Storage
+  issues.
 - **rack-protection 4.2.2** (from 3.0.5, via rack 3): a crafted request
   made CookieTossing reject or drop the session of every later request.
 - **rubyzip 3.7.0** (from 2.4.1): path traversal when expanding archives.
-- **css_parser 3.4.0** (from 1.11.0, with premailer 1.27.0): missing
+- **css_parser 3.4.0** (from 1.11.0, with premailer 1.33.0): missing
   certificate validation, SSRF and local file disclosure through
   `read_remote_file` and `@import`.
 - **excon 1.12.0**: additional sensitive headers are redacted on
   redirects.
 - Transitive gems: addressable, net-imap, net-ssh, net-smtp, jwt,
   websocket-driver, yard, ruby-lsp, rubyntlm, rack-test, loofah,
-  rails-html-sanitizer, Rack::Session, rackup, uri, json and others were
-  moved to their current releases.
+  rails-html-sanitizer, Rack::Session, rackup, uri and others were moved
+  to their current releases.
 
 ## Upgrades that carry the fixes
 
-- Ruby 3.3.9 in CI and in the omnibus package (3.1.5 before): nokogiri
-  1.19 already needs 3.2+, while ddtrace 1.x stops below 3.4.
-- Rails 8.0.5.2 for the app and the fieri engine; the cache store moves
-  from the retired `redis-rails` to the built-in `:redis_cache_store`.
+- Ruby 4.0.10 in CI, in the `.ruby-version` files and in the omnibus
+  package (3.3.x before). `ddtrace` 1.x stops below 3.4 and is replaced
+  by `datadog` 2.49, whose tracer supersedes it and follows the current
+  configuration API.
+- Standard library gems that Ruby 4.0 no longer bundles (`ostruct`,
+  `logger`, `observer`, `rexml`, `csv` and friends) are declared
+  explicitly.
+- Rails 8.1.4.1 for the app and the fieri engine; the cache store moves
+  from the retired `redis-rails` to the built-in `:redis_cache_store`
+  with the `redis` gem. The feature flags move from rollout 2.5 to
+  rollout 3.3 with `rollout-redis-adapter`.
 - sidekiq 7.3.10, which rack 3 requires. The removed delayed extensions
   come back through `sidekiq-delay_extensions`. `REDIS_URL` is normalised
   to a database index, because redis-client no longer accepts the
@@ -41,25 +49,45 @@ fieri engine after this branch. The npm audit is clean too.
   onto the rackup handler registry for the unmaintained unicorn-rails.
 - chef 19.4.46 (from 18.5.0) so inspec-core 7 and chef-winrm-fs 1.4.4 can
   drop their rubyzip pin.
-- Build tooling: test-kitchen 4.1.5, kitchen-vagrant 2.4.1, cookstyle
-  9.0.9, excon 1.12.0 and current omnibus/omnibus-software revisions.
+- Build tooling: test-kitchen 4.1.5, kitchen-vagrant 2.4.1, excon 1.12.0
+  and current omnibus/omnibus-software revisions.
+- The rest of the bundles were refreshed as well: aws-sdk, dry-*, kaminari,
+  redcarpet, puma, rspec, capybara, factory_bot, shoulda-matchers, vcr,
+  webmock, octokit, dotenv, premailer and the linters.
+
+## Other changes
+
+- Quality metric feedback, cookbook documents that are not markdown and
+  the announcement banner are handed to the view already escaped, and
+  fieri evaluates job payloads through a plain hash. The layouts and the
+  atom/mailer templates no longer need to mark output as safe by hand.
+- fieri runs cookstyle against the configuration that ships with
+  cookstyle instead of whatever `.rubocop.yml` the uploaded cookbook
+  carries, which makes the metric independent of the artifact.
+- `chefstyle` is replaced by `cookstyle` for linting, since chefstyle is
+  frozen on an old RuboCop. CI, CONTRIBUTING.md and the local setup use
+  cookstyle 9.0.9 with rubocop 1.91 and rubocop-rails 2.38.
+- The unused IRC log redirects (`/chat`, `IrcLogsController`) are gone.
+- `license_finder` left the development group because it still pins
+  rubyzip below 3 and no task uses it. Install it ad hoc, as
+  CONTRIBUTING.md describes.
+- fieri rejects job payloads that are not plain JSON types.
 
 ## Breaking or noteworthy changes
 
-- `license_finder` left the development group because it still pins
-  rubyzip below 3 and no task uses it. Install it ad hoc, as
-  CONTRIBUTING.md now describes.
-- fieri rejects job payloads that are not plain JSON types and pins json
-  to 2.x, since json 3 removed the `quirks_mode` keyword that Active
-  Support 8.0 still passes.
+- Ruby 4.0 needed a full bundle refresh for the standard library gems
+  listed above.
+- fieri no longer pins json below 3; Rails 8.1 stopped passing the
+  `quirks_mode` keyword.
 - The omnibus default `redis_url` drops the unused `/supermarket` suffix.
   Existing installations with a custom URL need nothing, sidekiq strips
   the suffix itself.
 
 ## Still open
 
-Blocked upstream, no released fix path yet:
-
+- The omnibus package pins Ruby 4.0.10. omnibus-software has no entry
+  for that release yet, so the project override carries the source
+  checksum. A full package build has not run here.
 - `aws-sdk-s3` 1.116.0 in the omnibus bundle: omnibus main pins it below
   1.117 (S3 encryption client key commitment).
 - `addressable` 2.8.10 and `rubyzip` 2.4.1 in the omnibus bundle:
