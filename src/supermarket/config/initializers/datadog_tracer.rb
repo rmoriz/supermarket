@@ -1,13 +1,11 @@
 # Disable/Enable and configure the datadog application tracer
-# crf. http://www.rubydoc.info/gems/ddtrace/#Ruby_on_Rails
+# crf. https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/ruby/
 
 if ENV["DATADOG_TRACER_ENABLED"] && ENV["DATADOG_TRACER_ENABLED"] == "true"
-  require "ddtrace"
-  Rails.configuration.datadog_trace =
-    {
-      auto_instrument: true,
-      auto_instrument_redis: true,
-      default_service: ENV["DATADOG_APP_NAME"] || "rails_app",
-      env: ENV["DATADOG_ENVIRONMENT"] || nil,
-    }
+  require "datadog/auto_instrument"
+
+  Datadog.configure do |c|
+    c.service = ENV["DATADOG_APP_NAME"] || "rails_app"
+    c.env = ENV["DATADOG_ENVIRONMENT"] if ENV["DATADOG_ENVIRONMENT"]
+  end
 end

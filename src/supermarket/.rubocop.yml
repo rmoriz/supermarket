@@ -1,11 +1,10 @@
-require:
-  - chefstyle
+plugins:
   - rubocop-rails
 Rails:
   Enabled: true
 AllCops:
   NewCops: disable
-  TargetRubyVersion: 3.0.3
+  TargetRubyVersion: 3.3
   Exclude:
     - db/**/*
     - engines/**/*

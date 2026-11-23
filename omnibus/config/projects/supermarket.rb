@@ -30,7 +30,11 @@ build_iteration 1
 
 # NOTE: see the omnibus-supermarket cookbook gemfile for controlling the infra client version
 override :chef, version: "v17.5.22" #with the new change in chef we have to specify the exact version
-override :ruby, version: "3.3.1", fips_version: "3.3.1"
+override :ruby,
+         version: "4.0.10",
+         fips_version: "3.3.1",
+         # omnibus-software has no checksum for 4.0.10 yet
+         source: { sha256: "b53eef3371fa5d3e3b74340edcd015f06d5d8853968d4e539a5264fce41ed9f1" }
 # override :'openssl-fips', version: '2.0.16'
 override :'omnibus-ctl', version: 'main'
 override :openssl, version: "3.2.4", fips_version: "3.1.2"

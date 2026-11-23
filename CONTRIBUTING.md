@@ -127,14 +127,14 @@ If you are adding dependencies to the project (gems in the Gemfile or npm packag
 
 ### Code Style
 
-[Chefstyle](https://github.com/chef/chefstyle) is used to enforce a specific Ruby style guide. This tool can let you know what the offenses are and where they occur.
+[Cookstyle](https://github.com/chef/cookstyle) is used to enforce a specific Ruby style guide. This tool can let you know what the offenses are and where they occur.
 
-It is worth noting that Travis CI runs Chefstyle and will fail the build if it detects any style violations.
+It is worth noting that CI runs Cookstyle and will fail the build if it detects any style violations.
 
 Before opening your PR you can run Rubocop locally in the `src/supermarket` directory:
 
 ```
-bundle exec chefstyle
+bundle exec cookstyle
 ```
 
 ### CSS

@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 gem "fieri", path: "engines/fieri"
-gem "rails", "~> 8.0.5"
+gem "rails", "~> 8.1.4"
 gem "rack", ">= 2.2.14"
 gem "resolv", ">= 0.3.0" # CVE-2024-26935/CVE-2024-26936 (CHEF-35153) — DNS resolver vuln; min fix 0.3.0
 
@@ -19,7 +19,7 @@ gem "sidekiq-cron"
 gem "aws-sdk-s3"
 gem "chef", "~> 19.4", require: false
 gem "compass-rails"
-gem "ddtrace", "~> 1.23", require: false
+gem "datadog", "~> 2.49", require: false
 gem "dotenv"
 gem "ffi-libarchive"
 gem "foreman"
@@ -37,7 +37,8 @@ gem "pundit"
 gem "rb-readline"
 gem "redcarpet" # markdown parsing
 gem "rinku", require: "rails_rinku"
-gem "rollout"
+gem "rollout", "~> 3.3"
+gem "rollout-redis-adapter", "~> 0.4"
 gem "sass-globbing"
 gem "sass-rails"
 gem "sentry-raven", require: false
@@ -53,10 +54,36 @@ gem "yajl-ruby"
 gem "tzinfo-data", "~> 1.2022"
 
 gem "listen"
-gem "cookstyle", "~> 7.32.1"
+gem "cookstyle", "~> 9.0"
 gem "kt-paperclip"
 gem "net-smtp", require: false
+gem "redis", "~> 5.4"
 gem "concurrent-ruby", "~> 1.3.8"
+
+# Standard library gems that are no longer bundled with Ruby 4.0
+gem "abbrev"
+gem "base64"
+gem "benchmark"
+gem "bigdecimal"
+gem "cgi"
+gem "csv"
+gem "date"
+gem "drb"
+gem "fiddle"
+gem "logger"
+gem "matrix"
+gem "mutex_m"
+gem "observer"
+gem "ostruct"
+gem "prime"
+gem "psych"
+gem "racc"
+gem "rexml"
+gem "rinda"
+gem "stringio"
+gem "time"
+gem "timeout"
+gem "uri"
 
 group :asset do
   gem "uglifier"
@@ -93,7 +120,6 @@ group :test do
 end
 
 group :development, :test do
-  gem "chefstyle", "~> 2.2.2"
   gem "factory_bot_rails", require: false
   gem "faker"
   gem "launchy"

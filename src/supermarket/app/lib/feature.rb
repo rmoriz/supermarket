@@ -1,4 +1,6 @@
 require "redis"
+require "rollout"
+require "rollout-redis-adapter"
 
 module Feature
   extend Forwardable
@@ -13,9 +15,9 @@ module Feature
   def self.adapter
     return @rollout if @rollout
 
-    redis_url = ENV["REDIS_URL"] || "redis://localhost:6379/0/supermarket"
+    redis_url = Supermarket::RedisUrl.normalize(ENV["REDIS_URL"] || "redis://localhost:6379/0/supermarket")
     redis = Redis.new(url: redis_url)
-    @rollout = Rollout.new(redis)
+    @rollout = Rollout.new(adapter: Rollout::Adapters::Redis.new(redis))
 
     features = ENV["FEATURES"].to_s.split(",").map(&:strip)
 

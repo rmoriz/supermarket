@@ -19,9 +19,9 @@ Gem::Specification.new do |s|
   s.add_dependency "dotenv-rails"
   s.add_dependency "mixlib-archive", ">= 0.4", "< 2.0"
   s.add_dependency "octokit", ">= 4.16", "< 11.0" # 4.16+ fixes deprecations in auth
-  s.add_dependency "rails", "~> 8.0.5"
+  s.add_dependency "rails", "~> 8.1.4"
   s.add_dependency "sidekiq", ">= 6.4", "< 8.0"
-  s.add_dependency "cookstyle", ">= 7.30"
+  s.add_dependency "cookstyle", "~> 9.0"
   s.add_dependency "net-smtp"
   s.add_dependency "sprockets-rails"
 end
