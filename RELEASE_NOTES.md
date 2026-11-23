@@ -79,14 +79,9 @@ fieri engine after this branch. The npm audit is clean too.
 
 ## Package build
 
-- The package ships PostgreSQL 17.12 instead of 13.22. The 13 binaries
-  stay in the package so the existing `pg_upgrade` resource can migrate a
-  cluster on the first `reconfigure` after the upgrade; `postgresql.conf`
-  holds no settings that 17 dropped. The license notice and the version
-  table in the upgrade documentation follow.
-- Redis 8.12.0 (from 7.0.8) with its own project software definition,
-  since Redis 8 is tri-licensed in `LICENSE.txt` and the omnibus-software
-  definition still names BSD-3-Clause.
+- The bundled PostgreSQL and Redis stay on 13.22 and 7.0.8: both
+  services may run outside the package, and a version jump would drag an
+  upgrade, a license change or both into the deployment.
 - The ctl command bundle moves from chef 16.18 to chef 18.11.11. Chef 16
   crashed on Ruby 4 with `File.exists?` while loading cookbooks. The
   cookbooks now declare `chef_version >= 18`.
@@ -108,9 +103,6 @@ fieri engine after this branch. The npm audit is clean too.
 - The omnibus default `redis_url` drops the unused `/supermarket` suffix.
   Existing installations with a custom URL need nothing, sidekiq strips
   the suffix itself.
-- The PostgreSQL 13 to 17 migration in the package copies the data
-  directory and needs the downtime and free disk space of a dump and
-  restore. Raise `pg_upgrade_timeout` beforehand for large databases.
 - A custom software definition or override that relies on chef 16 in the
   ctl commands has to move to chef 18.
 
@@ -127,6 +119,9 @@ fieri engine after this branch. The npm audit is clean too.
   affected, the packaged ctl commands run chef 18.11.
 - The rubyzip 2.4.1 pin above also covers the path traversal fix; worth
   revisiting once chef-zero allows 3.
-- PostgreSQL 13.22 stays in the package as the upgrade source and is
-  past its end of life; it disappears once 13 as an upgrade path is
-  dropped.
+- PostgreSQL 13.22 is past its end of life. Listing a newer major next to
+  it is enough to get the `pg_upgrade` path through the version scoped
+  data directory, so the jump can be done in the release that needs it.
+- Redis 7.0.8 is past support as well. 7.2 was the last BSD release; 7.4
+  and 8.x are RSALv2/SSPLv1/AGPLv3. Going to 7.2, or to Valkey, avoids
+  the license change entirely.
