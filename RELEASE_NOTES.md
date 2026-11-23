@@ -72,6 +72,32 @@ fieri engine after this branch. The npm audit is clean too.
   rubyzip below 3 and no task uses it. Install it ad hoc, as
   CONTRIBUTING.md describes.
 - fieri rejects job payloads that are not plain JSON types.
+- `rspec-rails` 8.1 in the app and the fieri engine (from 6.1 and 7.1).
+- `uglifier` cannot parse the ES6 in the bundled editor JavaScript and
+  broke `assets:precompile` in production. `terser` replaces it, so a
+  package build now needs a JavaScript runtime.
+
+## Package build
+
+- The package ships PostgreSQL 17.12 instead of 13.22. The 13 binaries
+  stay in the package so the existing `pg_upgrade` resource can migrate a
+  cluster on the first `reconfigure` after the upgrade; `postgresql.conf`
+  holds no settings that 17 dropped. The license notice and the version
+  table in the upgrade documentation follow.
+- Redis 8.12.0 (from 7.0.8) with its own project software definition,
+  since Redis 8 is tri-licensed in `LICENSE.txt` and the omnibus-software
+  definition still names BSD-3-Clause.
+- The ctl command bundle moves from chef 16.18 to chef 18.11.11. Chef 16
+  crashed on Ruby 4 with `File.exists?` while loading cookbooks. The
+  cookbooks now declare `chef_version >= 18`.
+- berkshelf 8.1.31, which requires `minitar` instead of the removed
+  `archive/tar/minitar` path.
+- openssl 3.2.6, libarchive 3.8.1, file 5.48 and the CA bundle from
+  2026-11-05.
+- The build lab installs nodejs for the asset step, the kitchen platforms
+  move to Ubuntu 22.04/24.04 and AlmaLinux 9, and the expeditor release
+  matrix drops Ubuntu 18.04/20.04 for 22.04/24.04.
+- The packaging cookbooks pass cookstyle again.
 
 ## Breaking or noteworthy changes
 
@@ -82,6 +108,11 @@ fieri engine after this branch. The npm audit is clean too.
 - The omnibus default `redis_url` drops the unused `/supermarket` suffix.
   Existing installations with a custom URL need nothing, sidekiq strips
   the suffix itself.
+- The PostgreSQL 13 to 17 migration in the package copies the data
+  directory and needs the downtime and free disk space of a dump and
+  restore. Raise `pg_upgrade_timeout` beforehand for large databases.
+- A custom software definition or override that relies on chef 16 in the
+  ctl commands has to move to chef 18.
 
 ## Still open
 
@@ -91,6 +122,11 @@ fieri engine after this branch. The npm audit is clean too.
 - `aws-sdk-s3` 1.116.0 in the omnibus bundle: omnibus main pins it below
   1.117 (S3 encryption client key commitment).
 - `addressable` 2.8.10 and `rubyzip` 2.4.1 in the omnibus bundle:
-  chef-zero requires rubyzip below 3, and chef 18.5 cannot be bumped to
-  19 there because omnibus main pins ohai below 19 and chef 18.6 pins ffi
-  below 1.17 while omnibus-software needs 1.17.
+  omnibus pins ohai below 19 and therefore chef 18.5, and chef-zero below
+  chef 19 requires rubyzip below 3. Only the build environment is
+  affected, the packaged ctl commands run chef 18.11.
+- The rubyzip 2.4.1 pin above also covers the path traversal fix; worth
+  revisiting once chef-zero allows 3.
+- PostgreSQL 13.22 stays in the package as the upgrade source and is
+  past its end of life; it disappears once 13 as an upgrade path is
+  dropped.
