@@ -7,6 +7,8 @@ gemspec
 
 gem "resolv", ">= 0.3.0" # CVE-2024-26935/CVE-2024-26936 (CHEF-35153) — DNS resolver vuln; min fix 0.3.0
 gem "sidekiq", "~> 7.3"
+# json 3 dropped the quirks_mode keyword that activesupport 8.0 still passes
+gem "json", "~> 2.21"
 
 # Declare any dependencies that are still in development here instead of in
 # your gemspec. These might include edge Rails or gems from your path or
