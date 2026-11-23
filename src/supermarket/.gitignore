@@ -45,7 +45,8 @@ db/fixtures
 # Ignore Coveralls related files
 coverage/
 
-# Ignore Paperclip uploads locally
+# Ignore precompiled assets and Paperclip uploads locally
+public/assets
 public/system
 
 # Ignore Redis dumps
