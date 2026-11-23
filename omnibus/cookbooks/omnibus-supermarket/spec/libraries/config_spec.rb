@@ -243,7 +243,7 @@ describe Supermarket::Config do
   end
 
   describe '#maybe_turn_on_fips' do
-    let(:node) { Chef::Node.new() }
+    let(:node) { Chef::Node.new }
 
     context 'with the default setting' do
       before(:each) do

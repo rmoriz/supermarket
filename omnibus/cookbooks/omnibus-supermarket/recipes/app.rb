@@ -37,16 +37,16 @@ end
 
 file "#{node['supermarket']['var_directory']}/etc/database.yml" do
   content(YAML.dump({
-    'production' => {
-      'adapter' => 'postgresql',
-      'database' => node['supermarket']['database']['name'],
-      'username' => node['supermarket']['database']['user'],
-      'password' => node['supermarket']['database']['password'],
-      'host' => node['supermarket']['database']['host'],
-      'port' => node['supermarket']['database']['port'],
-      'pool' => node['supermarket']['database']['pool'],
-    },
-  }))
+                      'production' => {
+                        'adapter' => 'postgresql',
+                        'database' => node['supermarket']['database']['name'],
+                        'username' => node['supermarket']['database']['user'],
+                        'password' => node['supermarket']['database']['password'],
+                        'host' => node['supermarket']['database']['host'],
+                        'port' => node['supermarket']['database']['port'],
+                        'pool' => node['supermarket']['database']['pool'],
+                      },
+                    }))
   owner node['supermarket']['user']
   group node['supermarket']['group']
   mode '0600'
@@ -65,7 +65,7 @@ end
 # Load licenses.json file in app directory with latest information from spdx link url
 # Create/Update licenses.json in assets/data directory in app folder.
 file "#{node['supermarket']['app_directory']}/app/assets/data/licenses.json" do
-  content Net::HTTP.get(URI.parse("#{node.default['supermarket']['spdx_license_url']}")).to_s
+  content Net::HTTP.get(URI.parse(node.default['supermarket']['spdx_license_url'].to_s)).to_s
   owner node['supermarket']['user']
   group node['supermarket']['group']
   mode '0600'

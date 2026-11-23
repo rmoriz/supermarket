@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Chef Software, Inc.
+# Copyright:: 2014 Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
 # limitations under the License.
 #
 
-name "supermarket-cookbooks"
+name 'supermarket-cookbooks'
 license :project_license
 
-source path: "cookbooks/omnibus-supermarket"
+source path: 'cookbooks/omnibus-supermarket'
 
 build do
   cookbooks_path = "#{install_dir}/embedded/cookbooks"
   env = with_standard_compiler_flags(with_embedded_path)
 
-  gem "install berkshelf"
+  gem 'install berkshelf'
   command "berks vendor #{cookbooks_path}", env: env
 
   block do
@@ -41,17 +41,17 @@ build do
   end
 
   block do
-    open("#{cookbooks_path}/dna.json", "w") do |file|
+    open("#{cookbooks_path}/dna.json", 'w') do |file|
       file.write FFI_Yajl::Encoder.encode(run_list: ['recipe[omnibus-supermarket::default]'])
     end
 
-    open("#{cookbooks_path}/show-config.json", "w") do |file|
+    open("#{cookbooks_path}/show-config.json", 'w') do |file|
       file.write FFI_Yajl::Encoder.encode(
         run_list: ['recipe[omnibus-supermarket::show_config]']
       )
     end
 
-    open("#{cookbooks_path}/solo.rb", "w") do |file|
+    open("#{cookbooks_path}/solo.rb", 'w') do |file|
       file.write <<-EOH.gsub(/^ {8}/, '')
         cookbook_path   "#{cookbooks_path}"
         cache_path "/var/opt/supermarket/cache"

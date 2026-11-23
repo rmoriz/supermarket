@@ -15,17 +15,17 @@
 # limitations under the License.
 #
 
-name "more-ruby-cleanup-supermarket"
+name 'more-ruby-cleanup-supermarket'
 
 skip_transitive_dependency_licensing true
 license :project_license
 
 source path: "#{project.files_path}/#{name}"
 
-dependency "ruby"
+dependency 'ruby'
 
 build do
-  block "Delete bundler git cache, docs, and build info" do
+  block 'Delete bundler git cache, docs, and build info' do
     remove_directory "#{install_dir}/embedded/service/supermarket/vendor/cache"
 
     # this expands into the appropriate Ruby release number dir

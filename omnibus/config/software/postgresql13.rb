@@ -14,33 +14,33 @@
 # limitations under the License.
 #
 
-name "postgresql13"
+name 'postgresql13'
 
-default_version "13.22"
+default_version '13.22'
 
-license "PostgreSQL"
-license_file "COPYRIGHT"
+license 'PostgreSQL'
+license_file 'COPYRIGHT'
 skip_transitive_dependency_licensing true
 
-dependency "zlib"
-dependency "openssl"
-dependency "libedit"
-dependency "ncurses"
-dependency "libossp-uuid"
-dependency "config_guess"
+dependency 'zlib'
+dependency 'openssl'
+dependency 'libedit'
+dependency 'ncurses'
+dependency 'libossp-uuid'
+dependency 'config_guess'
 
 source url: "https://ftp.postgresql.org/pub/source/v#{version}/postgresql-#{version}.tar.bz2"
-internal_source url: "#{ENV["ARTIFACTORY_REPO_URL"]}/#{name}/#{name}-#{version}.tuxcare.1.0.0.tar.bz2",
-                authorization: "X-JFrog-Art-Api:#{ENV["ARTIFACTORY_TOKEN"]}"
+internal_source url: "#{ENV['ARTIFACTORY_REPO_URL']}/#{name}/#{name}-#{version}.tuxcare.1.0.0.tar.bz2",
+                authorization: "X-JFrog-Art-Api:#{ENV['ARTIFACTORY_TOKEN']}"
 
-version("13.22") do
-  source url: "#{ENV["ARTIFACTORY_REPO_URL"]}/postgresql13/#{name}-#{version}.tuxcare.1.0.0.tar.bz2",
-         authorization: "X-JFrog-Art-Api:#{ENV["ARTIFACTORY_TOKEN"]}",
-         sha256: "d36d83dc89e625502cf6fb1d0529642ba1266bd614b4e4a41cefd1dddcf09080"
+version('13.22') do
+  source url: "#{ENV['ARTIFACTORY_REPO_URL']}/postgresql13/#{name}-#{version}.tuxcare.1.0.0.tar.bz2",
+         authorization: "X-JFrog-Art-Api:#{ENV['ARTIFACTORY_TOKEN']}",
+         sha256: 'd36d83dc89e625502cf6fb1d0529642ba1266bd614b4e4a41cefd1dddcf09080'
 end
-version("13.21") { source sha256: "dcda1294df45f033b0656cf7a8e4afbbc624c25e1b144aec79530f74d7ef4ab4" }
-version("13.18") { source sha256: "ceea92abee2a8c19408d278b68de6a78b6bd3dbb4fa2d653fa7ca745d666aab1" }
-version("13.4") { source sha256: "ea93e10390245f1ce461a54eb5f99a48d8cabd3a08ce4d652ec2169a357bc0cd" }
+version('13.21') { source sha256: 'dcda1294df45f033b0656cf7a8e4afbbc624c25e1b144aec79530f74d7ef4ab4' }
+version('13.18') { source sha256: 'ceea92abee2a8c19408d278b68de6a78b6bd3dbb4fa2d653fa7ca745d666aab1' }
+version('13.4') { source sha256: 'ea93e10390245f1ce461a54eb5f99a48d8cabd3a08ce4d652ec2169a357bc0cd' }
 
 relative_path "postgresql-#{version}"
 
@@ -50,13 +50,13 @@ build do
   # We need to consider only the major version for postgres 13
   short_version = version.match(/^([0-9]+)/).to_s
 
-  update_config_guess(target: "config")
+  update_config_guess(target: 'config')
 
-  command "./configure" \
+  command './configure' \
           " --prefix=#{install_dir}/embedded/postgresql/#{short_version}" \
-          " --with-libedit-preferred" \
-          " --with-openssl" \
-          " --with-ossp-uuid" \
+          ' --with-libedit-preferred' \
+          ' --with-openssl' \
+          ' --with-ossp-uuid' \
           " --with-includes=#{install_dir}/embedded/include" \
           " --with-libraries=#{install_dir}/embedded/lib", env: env
 

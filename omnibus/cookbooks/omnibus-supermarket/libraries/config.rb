@@ -112,7 +112,7 @@ class Supermarket
 
     def self.fips_enabled_in_kernel?
       fips_path = '/proc/sys/crypto/fips_enabled'
-      (File.exist?(fips_path) && File.read(fips_path).chomp != '0')
+      File.exist?(fips_path) && File.read(fips_path).chomp != '0'
     end
 
     def self.maybe_turn_on_fips(node)
@@ -149,7 +149,7 @@ class Supermarket
     def self.environment_variables_from(attributes)
       attributes.reduce '' do |str, attr|
         str << if attr[1].is_a?(String) || attr[1].is_a?(Numeric) || attr[1] == true || attr[1] == false
-                 "export #{attr[0].upcase}=\"#{attr[1]}\"\n"
+                 "export #{attr.first.upcase}=\"#{attr[1]}\"\n"
                else
                  ''
                end

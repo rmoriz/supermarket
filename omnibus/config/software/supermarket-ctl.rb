@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Chef Software, Inc.
+# Copyright:: 2014 Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,22 +14,22 @@
 # limitations under the License.
 #
 
-name "supermarket-ctl"
+name 'supermarket-ctl'
 license :project_license
 
-dependency "omnibus-ctl"
-dependency "runit"
+dependency 'omnibus-ctl'
+dependency 'runit'
 
-source path: "cookbooks/omnibus-supermarket"
+source path: 'cookbooks/omnibus-supermarket'
 
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
-  bundle "config set --local without test", env: env
-  bundle "install --binstubs", env: env
+  bundle 'config set --local without test', env: env
+  bundle 'install --binstubs', env: env
 
   block do
-    erb source: "supermarket-ctl.erb",
+    erb source: 'supermarket-ctl.erb',
         dest: "#{install_dir}/bin/supermarket-ctl",
         mode: 0755,
         vars: {
