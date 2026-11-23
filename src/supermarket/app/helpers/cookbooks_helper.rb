@@ -144,4 +144,16 @@ module CookbooksHelper
       link_to linked_text, params.merge(order: ordering), class: "button radius secondary"
     end
   end
+
+  #
+  # Renders the feedback of a quality metric result, keeping its line breaks
+  # while escaping the parts that come from the cookbook
+  #
+  # @param result [MetricResult] the metric result holding the feedback
+  #
+  # @return [ActiveSupport::SafeBuffer] the escaped feedback
+  #
+  def quality_metric_feedback(result)
+    safe_join(result.feedback.to_s.split("\n"), tag.br)
+  end
 end

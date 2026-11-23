@@ -9,6 +9,11 @@ describe CookbookVersionsHelper do
     it "returns the content if no extension is specified" do
       expect(render_document("_hi_", "")).to eql("_hi_")
     end
+
+    it "escapes markup when the extension is not markdown" do
+      expect(render_document("<script>alert(1)</script>", "txt"))
+        .to eql("&lt;script&gt;alert(1)&lt;/script&gt;")
+    end
   end
 
   describe "#safe_updated_at" do

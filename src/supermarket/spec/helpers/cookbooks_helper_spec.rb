@@ -110,4 +110,23 @@ describe CookbooksHelper do
       expect(URI(link["href"]).query).to include("order=not_excellent")
     end
   end
+
+  describe "#quality_metric_feedback" do
+    let(:result) { double }
+
+    it "keeps the line breaks of the feedback" do
+      allow(result).to receive(:feedback).and_return("one\ntwo")
+
+      expect(helper.quality_metric_feedback(result)).to eq("one<br>two")
+    end
+
+    it "escapes markup coming from the cookbook" do
+      allow(result).to receive(:feedback).and_return(%{<img src=x onerror=alert(1)>.rb: 1: something})
+
+      output = helper.quality_metric_feedback(result)
+
+      expect(output).to start_with("&lt;img src=x onerror=alert(1)&gt;.rb")
+      expect(output).to_not include("<img")
+    end
+  end
 end

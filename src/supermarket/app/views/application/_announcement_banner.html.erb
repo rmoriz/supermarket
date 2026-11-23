@@ -1,6 +1,6 @@
 <% if ENV["ANNOUNCEMENT_BANNER"].to_s == "true"%>
   <div id="announcements_text_div" data-alert class="alert-box info radius">
-    <div class="darkblue-href"><%=ENV["ANNOUNCEMENT_TEXT"].html_safe%></div>
+    <div class="darkblue-href"><%= sanitize(ENV.fetch("ANNOUNCEMENT_TEXT", "")) %></div>
     <a href="#" class="close">&times;</a>
   </div>
 <%end%>
