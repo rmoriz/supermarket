@@ -4,8 +4,8 @@ source 'https://rubygems.org'
 # Why is it here? Great question. This needs to get refactored away with the
 # ctl command have its own gemspec.
 
-gem 'chef', '~> 16.14'
-gem 'chef-bin', '~> 16.14'
+gem 'chef', '~> 18.5'
+gem 'chef-bin', '~> 18.5'
 gem 'inspec-core'
 gem 'inspec-core-bin'
 
@@ -16,3 +16,6 @@ group :test do
   gem 'chefspec'
   gem 'berkshelf'
 end
+
+# not a default gem any more as of Ruby 4.1, used by molinillo
+gem 'tsort'

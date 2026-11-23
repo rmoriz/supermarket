@@ -28,3 +28,6 @@ group :test do
   gem 'cookstyle'
   gem 'chefspec'
 end
+
+# not a default gem any more as of Ruby 4.1, used by molinillo
+gem 'tsort'

@@ -35,6 +35,9 @@ end
 
 include_recipe 'omnibus::default'
 
+# execjs needs a JavaScript runtime for the asset compilation of the app
+package 'nodejs'
+
 # do the build
 omnibus_build 'supermarket' do
   environment 'HOME' => node['omnibus']['build_user_home']

@@ -12,6 +12,6 @@ builder-to-testers-map:
     - el-9-x86_64
   sles-15-x86_64:
     - sles-15-x86_64
-  ubuntu-18.04-x86_64:
-    - ubuntu-18.04-x86_64
-    - ubuntu-20.04-x86_64
+  ubuntu-22.04-x86_64:
+    - ubuntu-22.04-x86_64
+    - ubuntu-24.04-x86_64

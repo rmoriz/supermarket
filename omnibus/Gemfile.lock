@@ -518,6 +518,7 @@ DEPENDENCIES
   omnibus!
   omnibus-software!
   test-kitchen
+  tsort
 
 BUNDLED WITH
    2.5.22

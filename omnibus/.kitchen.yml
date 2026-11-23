@@ -10,14 +10,14 @@ driver:
 provisioner:
   name: chef_zero
   product_name: chef
-  product_version: 14
+  product_version: 18
 
 platforms:
   # for Ubuntu, only need earliest supported version for build
   # testing occurs on earliest supported and later in a different kitchen
-  - name: ubuntu-18.04
-  - name: centos-7
-  - name: centos-8
+  - name: ubuntu-22.04
+  - name: ubuntu-24.04
+  - name: almalinux-9
 
 suites:
   - name: default

@@ -11,11 +11,18 @@ General Supermarket documentation is on the [Supermarket Wiki](https://github.co
 
 Installation
 ------------
-You must have a sane Ruby 1.9+ environment with Bundler installed. Ensure all
-the required gems are installed:
+You need Ruby 4.0 and Bundler, plus a JavaScript runtime (Node.js) for the
+asset compilation step. Ensure all the required gems are installed:
 
 ```shell
-bundle install --binstubs
+bundle install
+```
+
+The packaging cookbook under `cookbooks/omnibus-supermarket` has a Gemfile of
+its own for the `supermarket-ctl` command and its chef specs:
+
+```shell
+cd cookbooks/omnibus-supermarket && bundle install
 ```
 
 Usage

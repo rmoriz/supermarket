@@ -5,7 +5,7 @@ license          'Apache-2.0'
 description      'Builds a Supermarket omnibus package for development/testing'
 version          '1.0.0'
 
-depends          'yum-epel'
-depends          'omnibus'
+depends 'yum-epel'
+depends 'omnibus'
 
-chef_version     '>= 14.0'
+chef_version '>= 18.0'
