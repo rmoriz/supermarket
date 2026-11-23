@@ -17,7 +17,7 @@ gem "sidekiq", "~> 7.3"
 # gem 'debugger'
 group :development, :test do
   gem "pry"
-  gem "rspec-rails", "~> 7.1"
+  gem "rspec-rails", "~> 8.1"
   gem "rubocop-rails", require: false
   gem "sqlite3"
   gem "webmock"

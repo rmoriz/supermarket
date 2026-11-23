@@ -813,14 +813,14 @@ GEM
     rspec-mocks (3.13.9)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
-    rspec-rails (6.1.5)
-      actionpack (>= 6.1)
-      activesupport (>= 6.1)
-      railties (>= 6.1)
-      rspec-core (~> 3.13)
-      rspec-expectations (~> 3.13)
-      rspec-mocks (~> 3.13)
-      rspec-support (~> 3.13)
+    rspec-rails (8.1.0)
+      actionpack (>= 7.2)
+      activesupport (>= 7.2)
+      railties (>= 7.2)
+      rspec-core (>= 3.13.0, < 5.0.0)
+      rspec-expectations (>= 3.13.0, < 5.0.0)
+      rspec-mocks (>= 3.13.0, < 5.0.0)
+      rspec-support (>= 3.13.0, < 5.0.0)
     rspec-support (3.13.8)
     rubocop (1.91.0)
       json (>= 2.3)
@@ -956,6 +956,8 @@ GEM
     syslog-logger (1.6.8)
     terrapin (1.1.1)
       climate_control
+    terser (1.2.8)
+      execjs (>= 0.3.0, < 3)
     thor (1.4.0)
     tilt (2.9.0)
     time (0.5.0)
@@ -1004,8 +1006,6 @@ GEM
       concurrent-ruby (~> 1.0)
     tzinfo-data (1.2026.6)
       tzinfo (>= 1.0.0)
-    uglifier (4.2.1)
-      execjs (>= 0.3.0, < 3)
     unf_ext (0.0.9.1)
     unicode (0.4.4.5)
     unicode-display_width (2.6.0)
@@ -1137,7 +1137,7 @@ DEPENDENCIES
   rinku
   rollout (~> 3.3)
   rollout-redis-adapter (~> 0.4)
-  rspec-rails (~> 6.1)
+  rspec-rails (~> 8.1)
   rubocop-rails
   ruby-lsp
   sass-globbing
@@ -1155,11 +1155,11 @@ DEPENDENCIES
   spring-commands-rspec
   statsd-ruby
   stringio
+  terser
   time
   timeout
   tomlrb
   tzinfo-data (~> 1.2022)
-  uglifier
   unicorn
   unicorn-rails
   uri
