@@ -1,5 +1,5 @@
 #
-# Copyright 2017, Chef Software, Inc.
+# Copyright:: 2017, Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,29 +14,30 @@
 # limitations under the License.
 #
 
-name "file"
+name 'file'
 
-dependency "zlib"
+dependency 'zlib'
 
-default_version "5.30"
-version("5.30") { source sha256: "694c2432e5240187524c9e7cf1ec6acc77b47a0e19554d34c14773e43dbbf214" }
+default_version '5.48'
+version('5.48') { source sha256: 'ed14656883b23a364b4057c05595d93252da9bc473d30106519519d0da141283' }
+version('5.30') { source sha256: '694c2432e5240187524c9e7cf1ec6acc77b47a0e19554d34c14773e43dbbf214' }
 
-license "custom"
-license_file "COPYING"
+license 'custom'
+license_file 'COPYING'
 
-source url: "ftp://ftp.astron.com/pub/file/file-#{version}.tar.gz"
-internal_source url: "#{ENV["ARTIFACTORY_REPO_URL"]}/#{name}/#{name}-#{version}.tar.gz",
-                authorization: "X-JFrog-Art-Api:#{ENV["ARTIFACTORY_TOKEN"]}"
+source url: "https://astron.com/pub/file/file-#{version}.tar.gz"
+internal_source url: "#{ENV['ARTIFACTORY_REPO_URL']}/#{name}/#{name}-#{version}.tar.gz",
+                authorization: "X-JFrog-Art-Api:#{ENV['ARTIFACTORY_TOKEN']}"
 
 relative_path "file-#{version}"
 
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
-  configure_command = ["./configure",
+  configure_command = ['./configure',
                        "--prefix=#{install_dir}/embedded"]
 
-  command configure_command.join(" "), env: env
+  command configure_command.join(' '), env: env
   make "-j #{workers}", env: env
   make "-j #{workers} install", env: env
 end

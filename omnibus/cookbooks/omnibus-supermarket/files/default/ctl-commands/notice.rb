@@ -437,7 +437,7 @@ Piotr Murach  | tty-box | 0.7.0 | MIT
 Piotr Murach  | tty-reader | 0.9.0 | MIT
 Pivotal Software, Inc. | license_finder | 7.0.1 | MIT
 Progress Software Corporation | artifactory | 3.0.17 | Apache-2.0
-Progress Software Corporation | chef | 18.5.0 | Apache-2.0
+Progress Software Corporation | chef | 18.11.11 | Apache-2.0
 Progress Software Corporation | chef/common-github-actions/.github/workflows/ci-main-pull-request.yml | main | Apache-2.0
 Progress Software Corporation | chef-bin | 16.14 | Apache-2.0
 Progress Software Corporation | chef-cleanroom | 1.0.5 | Apache-2.0
@@ -598,6 +598,7 @@ Troy Goode <troygoode@gmail.com> | @types/cors | 2.8.17 | MIT
 Troy Goode <troygoode@gmail.com> | cors | 2.8.5 | MIT
 Troy Goode <troygoode@gmail.com> | require-directory | 2.1.1 | MIT
 TuxCare | postgresql13 | 13.22 | Commercial License
+The PostgreSQL Global Development Group | postgresql17 | 17.12 | PostgreSQL
 unicorn hackers | unicorn | 6.1.0 | Ruby 1.8 License
 Unshift.io, Arnout Kazemier, the Contributors | requires-port | 1.0.0 | MIT
 Vercel, Inc. | ms | 2.1.3 | MIT
@@ -9395,14 +9396,14 @@ DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
 
 2.	Special Notices Regarding Commercially Licensed Third-Party Components incorporated into the Product
 
-(a) Progress Chef Supermarket v5.3 incorporates PostGres 13.22 licensed from TuxCare.
+(a) Progress Chef Supermarket v5.3 incorporates Postgres 13.22 licensed from TuxCare. PostgreSQL 17.12 is incorporated under the PostgreSQL License.
 
 3.	Special Notices Regarding Progress Product Components incorporated into the Product: Shown Above
 
 NOTICE FROM PROGRESS SOFTWARE CORPORATION: Additional notices may be included in the release notes or other documentation that accompanies updates received in connection with support of the Product.
 
 
-Updated 10.Nov.2025
+Updated 24.Nov.2026
 
   NOTICE
   
