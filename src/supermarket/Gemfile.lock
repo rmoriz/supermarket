@@ -683,7 +683,7 @@ GEM
     regexp_parser (2.7.0)
     reline (0.6.2)
       io-console (~> 0.5)
-    resolv (0.4.0)
+    resolv (0.8.1)
     rest-client (2.1.0)
       http-accept (>= 1.7.0, < 2.0)
       http-cookie (>= 1.0.2, < 2.0)
