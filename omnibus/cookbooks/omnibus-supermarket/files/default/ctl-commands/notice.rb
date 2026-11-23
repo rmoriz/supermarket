@@ -598,7 +598,6 @@ Troy Goode <troygoode@gmail.com> | @types/cors | 2.8.17 | MIT
 Troy Goode <troygoode@gmail.com> | cors | 2.8.5 | MIT
 Troy Goode <troygoode@gmail.com> | require-directory | 2.1.1 | MIT
 TuxCare | postgresql13 | 13.22 | Commercial License
-The PostgreSQL Global Development Group | postgresql17 | 17.12 | PostgreSQL
 unicorn hackers | unicorn | 6.1.0 | Ruby 1.8 License
 Unshift.io, Arnout Kazemier, the Contributors | requires-port | 1.0.0 | MIT
 Vercel, Inc. | ms | 2.1.3 | MIT
@@ -9396,7 +9395,7 @@ DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
 
 2.	Special Notices Regarding Commercially Licensed Third-Party Components incorporated into the Product
 
-(a) Progress Chef Supermarket v5.3 incorporates Postgres 13.22 licensed from TuxCare. PostgreSQL 17.12 is incorporated under the PostgreSQL License.
+(a) Progress Chef Supermarket v5.3 incorporates PostGres 13.22 licensed from TuxCare.
 
 3.	Special Notices Regarding Progress Product Components incorporated into the Product: Shown Above
 

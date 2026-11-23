@@ -21,10 +21,7 @@ source path: File.expand_path('../../../../src/supermarket', project.filepath)
 
 dependency 'cacerts'
 dependency 'openresty'
-# 13 stays in the package so pg_upgrade can read an existing cluster;
-# it has to stay above 17 so 17 is linked into embedded/bin last.
 dependency 'postgresql13'
-dependency 'postgresql17'
 dependency 'redis'
 dependency 'ruby'
 dependency 'runit'
