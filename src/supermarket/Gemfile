@@ -5,10 +5,10 @@ gem "rails", "~> 7.2.4"
 gem "rack", ">= 2.2.14"
 gem "resolv", ">= 0.3.0" # CVE-2024-26935/CVE-2024-26936 (CHEF-35153) — DNS resolver vuln; min fix 0.3.0
 
-gem "omniauth", "~> 2.1.1"
+gem "omniauth", "~> 2.4"
 gem "omniauth-chef-oauth2"
 gem "omniauth-github", "~> 2.0.0"
-gem "omniauth-oauth2", "~> 1.7.3"
+gem "omniauth-oauth2", "~> 1.10"
 gem "omniauth-rails_csrf_protection"
 gem "coderay" # markdown doc - syntax highlighting
 
