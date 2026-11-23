@@ -207,7 +207,7 @@ GEM
       sass (>= 3.2, < 3.5)
     compass-rails (2.0.1)
       compass (~> 1.0.0)
-    concurrent-ruby (1.3.4)
+    concurrent-ruby (1.3.8)
     connection_pool (2.5.4)
     cookstyle (7.32.1)
       rubocop (= 1.25.1)
@@ -937,7 +937,7 @@ DEPENDENCIES
   chefstyle (~> 2.2.2)
   coderay
   compass-rails
-  concurrent-ruby (= 1.3.4)
+  concurrent-ruby (~> 1.3.8)
   cookstyle (~> 7.32.1)
   cuprite
   database_cleaner (~> 2.0)
