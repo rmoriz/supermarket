@@ -8,7 +8,7 @@ PATH
       net-smtp
       octokit (>= 4.16, < 11.0)
       rails (~> 7.2.4)
-      sidekiq (>= 6.4, < 7.0)
+      sidekiq (>= 6.4, < 8.0)
       sprockets-rails
 
 GEM
@@ -240,7 +240,7 @@ GEM
       prism (>= 1.6.0)
       rbs (>= 4.0.0)
       tsort
-    redis-client (0.25.2)
+    redis-client (0.31.0)
       connection_pool
     regexp_parser (2.11.2)
     reline (0.7.0)
@@ -285,11 +285,12 @@ GEM
       addressable (>= 2.3.5)
       faraday (>= 0.17.3, < 3)
     securerandom (0.4.1)
-    sidekiq (7.0.0.beta1)
-      concurrent-ruby (< 2)
-      connection_pool (>= 2.3.0)
-      rack (>= 2.2.4)
-      redis-client (>= 0.9.0)
+    sidekiq (7.3.10)
+      base64
+      connection_pool (>= 2.3.0, < 3)
+      logger
+      rack (>= 2.2.4, < 3.3)
+      redis-client (>= 0.23.0, < 1)
     sprockets (4.2.2)
       concurrent-ruby (~> 1.0)
       logger
@@ -333,6 +334,7 @@ DEPENDENCIES
   resolv (>= 0.3.0)
   rspec-rails (~> 7.1)
   rubocop-rails
+  sidekiq (~> 7.3)
   sqlite3
   webmock
 

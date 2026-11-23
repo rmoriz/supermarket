@@ -12,11 +12,12 @@ gem "omniauth-oauth2", "~> 1.10"
 gem "omniauth-rails_csrf_protection"
 gem "coderay" # markdown doc - syntax highlighting
 
-gem "sidekiq", "~> 6.5"
+gem "sidekiq", "~> 7.3"
+gem "sidekiq-delay_extensions"
 gem "sidekiq-cron"
 
 gem "aws-sdk-s3"
-gem "chef", "~> 18.2", require: false
+gem "chef", "~> 19.4", require: false
 gem "compass-rails"
 gem "ddtrace", "~> 1.23", require: false
 gem "dotenv"
@@ -71,7 +72,6 @@ group :development do
   gem "guard"
   gem "guard-rspec", require: false
   gem "guard-rubocop", require: false
-  gem "license_finder"
   gem "spring"
   gem "spring-commands-rspec"
   gem "ruby-lsp", require: false

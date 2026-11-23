@@ -123,7 +123,7 @@ bundle exec rake spec:views
 
 ### Adding Dependencies
 
-If you are adding dependencies to the project (gems in the Gemfile or npm packages in `packages.json`, please run `license_finder` to make sure that none of the added dependencies conflict  with the project's whitelisted licenses.
+If you are adding dependencies to the project (gems in the Gemfile or npm packages in `packages.json`), please run `license_finder` (`gem install license_finder` if it is unavailable) to make sure that none of the added dependencies conflict with the project's whitelisted licenses.
 
 ### Code Style
 

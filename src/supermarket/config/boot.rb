@@ -6,3 +6,14 @@ require "bundler/setup" # Set up gems listed in the Gemfile.
 class << File
   alias_method :exists?, :exist? unless File.respond_to?(:exists?)
 end
+
+# rack 3 moved the handlers into the rackup gem, but unicorn-rails still
+# registers itself on Rack::Handler
+require "rack"
+require "rackup/handler"
+module Rackup
+  module Handler
+    Rack = ::Rack # so the "Rack::Handler::Unicorn" registrations resolve
+  end
+end
+Rack::Handler = Rackup::Handler unless Rack.const_defined?(:Handler, false)

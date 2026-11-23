@@ -2,6 +2,10 @@ redis_for_job_queue = ENV["REDIS_JOBQ_URL"].presence ||
                       ENV["REDIS_URL"].presence ||
                       "redis://localhost:6379/0/supermarket"
 
+# Sidekiq 7 reads the URL with redis-client, which cannot parse the legacy
+# "<db>/<namespace>" suffix and only understands the database index.
+redis_for_job_queue = redis_for_job_queue.sub(%r{(:\d+/\d+)/.+\z}, '\1')
+
 Sidekiq.configure_server do |config|
   config.redis = { url: redis_for_job_queue }
 
@@ -23,6 +27,13 @@ Sidekiq.configure_client do |config|
   config.redis = { url: redis_for_job_queue }
 end
 
-# Sidekiq's Delayed Extensions are deprecated and will be removed in Sidekiq 7.0
-# Keep enabled for now until we migrate .delay calls to proper ActiveJob classes
-Sidekiq::Extensions.enable_delay!
+# Sidekiq removed the Delayed Extensions in 7.0. Keep .delay calls working
+# through the extracted gem until they are migrated to ActiveJob classes.
+Sidekiq::DelayExtensions.enable_delay!
+
+# Jobs enqueued before the upgrade still carry the old class names.
+module Sidekiq::Extensions
+end
+Sidekiq::Extensions::DelayedClass = Sidekiq::DelayExtensions::DelayedClass
+Sidekiq::Extensions::DelayedModel = Sidekiq::DelayExtensions::DelayedModel
+Sidekiq::Extensions::DelayedMailer = Sidekiq::DelayExtensions::DelayedMailer

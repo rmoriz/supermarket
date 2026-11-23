@@ -7,7 +7,12 @@ module Fieri
       if: proc { request.format.json? || action_name == "create" }, raise: false
 
     def create
-      MetricsRunner.perform_async(job_params.to_h)
+      # Sidekiq 7 only accepts plain JSON types as job arguments
+      MetricsRunner.perform_async(
+        "name" => job_params[:name],
+        "version" => job_params[:version],
+        "artifact_url" => job_params[:artifact_url]
+      )
       render json: { status: "ok" }.to_json
     end
 

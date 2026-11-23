@@ -6,6 +6,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "resolv", ">= 0.3.0" # CVE-2024-26935/CVE-2024-26936 (CHEF-35153) — DNS resolver vuln; min fix 0.3.0
+gem "sidekiq", "~> 7.3"
 
 # Declare any dependencies that are still in development here instead of in
 # your gemspec. These might include edge Rails or gems from your path or
