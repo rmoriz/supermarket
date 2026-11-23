@@ -25,7 +25,7 @@ class ExceptionsController < ApplicationController
   # @return [Integer]
   #
   def status_code
-    wrapped_exception.status_code.to_i
+    Integer(wrapped_exception.status_code)
   end
 
   #

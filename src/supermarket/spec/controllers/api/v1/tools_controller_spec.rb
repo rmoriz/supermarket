@@ -19,7 +19,7 @@ describe Api::V1::ToolsController do
     it "responds with a 200" do
       get :index, format: :json
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "sends the tools to view" do
@@ -130,7 +130,7 @@ describe Api::V1::ToolsController do
       it "responds with a 200" do
         get :show, params: { tool: berkshelf_tool.slug, format: :json }
 
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "sends the tool to the view" do
@@ -144,7 +144,7 @@ describe Api::V1::ToolsController do
       it "responds with a 404" do
         get :show, params: { tool: "trololol", format: :json }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -158,7 +158,7 @@ describe Api::V1::ToolsController do
     it "responds with a 200" do
       get :search, format: :json
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "sends tool search result to the view" do

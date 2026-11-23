@@ -15,7 +15,7 @@ describe Api::V1::CookbookVersionsController do
     it "responds with a 200" do
       get :show, params: { cookbook: "redis", version: "latest", format: :json }
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "sends the cookbook to the view" do
@@ -57,7 +57,7 @@ describe Api::V1::CookbookVersionsController do
     it "404s if a cookbook version does not exist" do
       get :show, params: { cookbook: "redis", version: "4_0_2", format: :json }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -69,7 +69,7 @@ describe Api::V1::CookbookVersionsController do
       get :download, params: { cookbook: cookbook.name, version: version.to_param, format: :json }
 
       expect(response).to redirect_to(version.cookbook_artifact_url)
-      expect(response.status.to_i).to eql(302)
+      expect(Integer(response.status)).to eql(302)
     end
 
     it "logs the web download count for the cookbook version" do
@@ -87,13 +87,13 @@ describe Api::V1::CookbookVersionsController do
     it "404s when the cookbook does not exist" do
       get :download, params: { cookbook: "snarfle", version: "100.1.1", format: :json }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "404s when the cookbook version does not exist" do
       get :download, params: { cookbook: cookbook.name, version: "100.1.1", format: :json }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 end

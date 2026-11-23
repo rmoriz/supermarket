@@ -5,7 +5,7 @@ describe ToolsController do
     it "responds with a 200" do
       get :index
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "assigns tools" do
@@ -83,7 +83,7 @@ describe ToolsController do
       it "404s" do
         get :show, params: { id: "dorfle" }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -96,7 +96,7 @@ describe ToolsController do
     it "responds with a 200" do
       get :new
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "assigns a new tool" do
@@ -163,7 +163,7 @@ describe ToolsController do
     it "responds with a 200" do
       get :edit, params: { id: tool }
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "assigns tool" do
@@ -183,7 +183,7 @@ describe ToolsController do
 
       get :edit, params: { id: tool }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -250,7 +250,7 @@ describe ToolsController do
 
       patch :update, params: { id: tool, tool: { name: "margarine" } }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -278,7 +278,7 @@ describe ToolsController do
 
       delete :destroy, params: { id: tool }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 

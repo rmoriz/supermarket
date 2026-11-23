@@ -98,7 +98,7 @@ module Universe
   def show_hits
     sql = "SELECT total FROM hits WHERE label='universe'"
     result = ActiveRecord::Base.connection.execute(sql).to_a.first
-    result.nil? ? 0 : result["total"].to_i
+    result.nil? ? 0 : Integer(result["total"])
   end
 
   #

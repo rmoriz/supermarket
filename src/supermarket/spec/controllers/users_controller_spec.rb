@@ -29,7 +29,7 @@ describe UsersController do
 
       get :show, params: { id: user.username, user_tab_string: "activity" }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -122,7 +122,7 @@ describe UsersController do
 
       it "renders 404" do
         put :make_admin, params: { id: user }
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -150,7 +150,7 @@ describe UsersController do
 
       it "renders 404" do
         delete :revoke_admin, params: { id: user }
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end

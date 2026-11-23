@@ -78,7 +78,7 @@ describe Api::V1::UsersController do
       it "responds with a 200" do
         get :show, params: { user: "clive", format: :json }
 
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "sends the user to the view" do
@@ -170,7 +170,7 @@ describe Api::V1::UsersController do
       it "responds with a 404" do
         get :show, params: { user: "sushiqueen", format: :json }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end

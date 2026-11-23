@@ -11,7 +11,7 @@ describe CookbookVersionsController do
       get :download, params: { cookbook_id: cookbook.name, version: version.to_param }
 
       expect(response).to redirect_to(version.cookbook_artifact_url)
-      expect(response.status.to_i).to eql(302)
+      expect(Integer(response.status)).to eql(302)
     end
 
     it "logs the web download count for the cookbook version" do
@@ -29,13 +29,13 @@ describe CookbookVersionsController do
     it "404s when the cookbook does not exist" do
       get :download, params: { cookbook_id: "snarfle", version: "100.1.1" }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "404s when the cookbook version does not exist" do
       get :download, params: { cookbook_id: cookbook.name, version: "100.1.1" }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     context "creating urls to cookbooks" do

@@ -8,7 +8,7 @@ describe PagesController do
       it "responds with a 200" do
         get :welcome
 
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "sends cookbook count to the view" do
@@ -63,7 +63,7 @@ describe PagesController do
         # template. We define the correct behavior to be 404 Not Found.
         get :dashboard, format: :json
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
 

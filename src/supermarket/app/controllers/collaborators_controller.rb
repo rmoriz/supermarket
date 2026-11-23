@@ -82,7 +82,7 @@ class CollaboratorsController < ApplicationController
 
       remove_group_collaborators(group_collaborators(resource, group))
 
-      GroupResource.where(group: group, resourceable: resource).each(&:destroy)
+      GroupResource.where(group: group, resourceable: resource).find_each(&:destroy)
 
       flash[:notice] = t("collaborator.group_removed", name: group.name) + " "
 
@@ -163,7 +163,7 @@ class CollaboratorsController < ApplicationController
     dup_user_collaborators = []
 
     collaborator_users.each do |user|
-      resource.collaborators.where(user: user).each do |dup_user|
+      resource.collaborators.where(user: user).find_each do |dup_user|
         dup_user_collaborators << dup_user
       end
     end

@@ -43,7 +43,7 @@ module Badgeable
   #
   def badges
     BADGES.reject do |b|
-      (badges_mask.to_i & 2**BADGES.index(b)) == 0
+      (Integer(badges_mask || 0) & 2**BADGES.index(b)) == 0
     end
   end
 

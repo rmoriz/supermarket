@@ -13,7 +13,7 @@ describe "GET /api/v1/cookbooks/:cookbook/contingent" do
     end
 
     it "returns a 200" do
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "returns the cookbooks" do
@@ -28,7 +28,7 @@ describe "GET /api/v1/cookbooks/:cookbook/contingent" do
     it "returns a 404" do
       get "/api/v1/cookbooks/mamimi"
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "returns a 404 message" do

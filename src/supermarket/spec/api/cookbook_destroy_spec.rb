@@ -25,7 +25,7 @@ describe "DELETE /api/v1/cookbooks/:cookbook" do
     end
 
     it "is not authorized" do
-      expect(response.status.to_i).to eql(403)
+      expect(Integer(response.status)).to eql(403)
     end
 
     it "returns an error message" do
@@ -41,7 +41,7 @@ describe "DELETE /api/v1/cookbooks/:cookbook" do
     end
 
     it "is authorized" do
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "returns the destroyed cookbook metadata" do
@@ -53,7 +53,7 @@ describe "DELETE /api/v1/cookbooks/:cookbook" do
     before { unshare_cookbook("mamimi", user) }
 
     it "returns a 404" do
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "returns a 404 message" do

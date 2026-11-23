@@ -13,7 +13,7 @@ describe "POST /api/v1/cookbook_evalution_results" do
                      cookstyle_feedback: nil,
                      fieri_key: "YOUR_FIERI_KEY" }
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
   end
 end

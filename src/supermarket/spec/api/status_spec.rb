@@ -4,7 +4,7 @@ describe "GET /status" do
   it "returns a 200" do
     get "/status"
 
-    expect(response.status.to_i).to eql(200)
+    expect(Integer(response.status)).to eql(200)
   end
 
   it "returns a status ok" do

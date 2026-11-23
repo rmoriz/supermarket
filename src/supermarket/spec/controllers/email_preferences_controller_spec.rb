@@ -11,7 +11,7 @@ describe EmailPreferencesController do
 
     it "should 404 if the token does not exist" do
       get :unsubscribe, params: { token: "haha" }
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "should unsubscribe the person from the email" do

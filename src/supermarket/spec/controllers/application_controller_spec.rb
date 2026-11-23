@@ -28,13 +28,13 @@ describe ApplicationController do
     it "404s when HTML is requested by JSON is served" do
       get :index
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "404s when JSON is requested but HTML is served" do
       get :show, params: { id: 1, format: :json }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "sets the default search context as cookbooks" do

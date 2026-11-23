@@ -33,7 +33,7 @@ class OauthTokenRefreshWorker
   rescue ActiveRecord::RecordNotFound => e
     logger.error(e.message) unless Rails.env.test?
   rescue OAuth2::Error => e
-    if e.response.status.to_i >= 500
+    if Integer(e.response.status) >= 500
       raise e
     else
       logger.error(e.message) unless Rails.env.test?

@@ -7,7 +7,7 @@ describe "the set of SASS assets", type: :feature do
     # append datetime after name for uniqueness.
     def initialize(name, content = nil)
       t = Time.zone.now
-      @filename = "#{name}_#{t.to_i}_#{t.usec}.scss"
+      @filename = "#{name}_#{Integer(t)}_#{t.usec}.scss"
       @fullname = File.join(BrandingFile.branding_dir, @filename)
       write(content) if content
     end

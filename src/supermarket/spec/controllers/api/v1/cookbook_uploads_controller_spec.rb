@@ -32,7 +32,7 @@ describe Api::V1::CookbookUploadsController do
       it "returns a 201" do
         post :create, params: { cookbook: "cookbook", tarball: "tarball", format: :json }
 
-        expect(response.status.to_i).to eql(201)
+        expect(Integer(response.status)).to eql(201)
       end
 
       it "kicks off a CookbookNotifyWorker" do
@@ -86,7 +86,7 @@ describe Api::V1::CookbookUploadsController do
       it "returns a 400" do
         post :create, params: { cookbook: "cookbook", tarball: "tarball", format: :json }
 
-        expect(response.status.to_i).to eql(400)
+        expect(Integer(response.status)).to eql(400)
       end
     end
 
@@ -108,7 +108,7 @@ describe Api::V1::CookbookUploadsController do
       it "returns a 401" do
         post :create, params: { cookbook: "not valid data because", tarball: "this upload should not even be processed", format: :json }
 
-        expect(response.status.to_i).to eql(401)
+        expect(Integer(response.status)).to eql(401)
       end
     end
 
@@ -116,7 +116,7 @@ describe Api::V1::CookbookUploadsController do
       it "returns a 400" do
         post :create, params: { cookbook: "{}", format: :json }
 
-        expect(response.status.to_i).to eql(400)
+        expect(Integer(response.status)).to eql(400)
       end
     end
 
@@ -124,7 +124,7 @@ describe Api::V1::CookbookUploadsController do
       it "returns a 400" do
         post :create, params: { tarball: "tarball", format: :json }
 
-        expect(response.status.to_i).to eql(400)
+        expect(Integer(response.status)).to eql(400)
       end
     end
   end
@@ -145,7 +145,7 @@ describe Api::V1::CookbookUploadsController do
 
       it "responds with a 200" do
         unshare
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "destroys a cookbook" do
@@ -175,7 +175,7 @@ describe Api::V1::CookbookUploadsController do
 
       it "responds with unauthorized" do
         unshare
-        expect(response.status.to_i).to eql(403)
+        expect(Integer(response.status)).to eql(403)
       end
 
       it "does not destroy a cookbook" do
@@ -248,7 +248,7 @@ describe Api::V1::CookbookUploadsController do
       it "returns a 403" do
         unshare
 
-        expect(response.status.to_i).to eql(403)
+        expect(Integer(response.status)).to eql(403)
       end
     end
 
@@ -256,7 +256,7 @@ describe Api::V1::CookbookUploadsController do
       it "responds with a 404" do
         delete :destroy, params: { cookbook: "mamimi", format: :json }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -288,7 +288,7 @@ describe Api::V1::CookbookUploadsController do
 
       it "responds with a 200" do
         unshare_version
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "destroys a cookbook version" do
@@ -305,7 +305,7 @@ describe Api::V1::CookbookUploadsController do
       it "returns a 403" do
         unshare_version
 
-        expect(response.status.to_i).to eql(403)
+        expect(Integer(response.status)).to eql(403)
       end
     end
 
@@ -318,7 +318,7 @@ describe Api::V1::CookbookUploadsController do
           delete :destroy_version, params: { cookbook: cookbook, version: version, format: :json }
         end
 
-        expect(response.status.to_i).to eql(409)
+        expect(Integer(response.status)).to eql(409)
         expect(JSON.parse(response.body)["error"]).to eq(I18n.t("api.error_messages.only_cookbook_version"))
       end
     end
@@ -327,7 +327,7 @@ describe Api::V1::CookbookUploadsController do
       it "responds with a 404" do
         delete :destroy_version, params: { cookbook: "mamimi", version: "1.0.0", format: :json }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
 
@@ -335,7 +335,7 @@ describe Api::V1::CookbookUploadsController do
       it "responds with a 404" do
         delete :destroy_version, params: { cookbook: cookbook, version: "1.0.0", format: :json }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end

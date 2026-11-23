@@ -19,7 +19,7 @@ describe "GET /api/v1/tools/:tool" do
     it "returns a 200" do
       get "/api/v1/tools/#{tool.slug}"
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "returns the tool" do
@@ -33,7 +33,7 @@ describe "GET /api/v1/tools/:tool" do
     it "returns a 404" do
       get "/api/v1/tools/trololol"
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "returns a 404 message" do

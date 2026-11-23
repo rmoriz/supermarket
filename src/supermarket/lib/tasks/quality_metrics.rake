@@ -2,7 +2,7 @@ namespace :quality_metrics do
   desc "List the names of quality metrics"
   task list: :environment do
     puts "Quality Metrics:"
-    QualityMetric.all.each do |qm|
+    QualityMetric.all.find_each do |qm|
       puts "+ #{qm.name}"
     end
   end

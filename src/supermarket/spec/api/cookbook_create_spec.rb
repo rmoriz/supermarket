@@ -5,7 +5,7 @@ describe "POST /api/v1/cookbooks" do
 
   shared_context "invalid cookbook" do
     it "returns a 400" do
-      expect(response.status.to_i).to eql(400)
+      expect(Integer(response.status)).to eql(400)
     end
 
     it "returns an error code" do
@@ -19,7 +19,7 @@ describe "POST /api/v1/cookbooks" do
 
   shared_context "valid cookbook" do
     it "returns a 201" do
-      expect(response.status.to_i).to eql(201)
+      expect(Integer(response.status)).to eql(201)
     end
 
     it "returns the URI for the newly created cookbook" do
@@ -61,7 +61,7 @@ describe "POST /api/v1/cookbooks" do
     before(:each) { share_cookbook("redis-test", double("user", username: "invalid-user")) }
 
     it "returns a 401" do
-      expect(response.status.to_i).to eql(401)
+      expect(Integer(response.status)).to eql(401)
     end
 
     it "returns an error code" do
@@ -77,7 +77,7 @@ describe "POST /api/v1/cookbooks" do
     before(:each) { share_cookbook("redis-test", user, with_invalid_private_key: true) }
 
     it "returns a 401" do
-      expect(response.status.to_i).to eql(401)
+      expect(Integer(response.status)).to eql(401)
     end
 
     it "returns an error code" do
@@ -95,7 +95,7 @@ describe "POST /api/v1/cookbooks" do
     before { share_cookbook("redis-test", imported_user) }
 
     it "returns a 401" do
-      expect(response.status.to_i).to eql(401)
+      expect(Integer(response.status)).to eql(401)
     end
 
     it "returns an error code" do
@@ -113,7 +113,7 @@ describe "POST /api/v1/cookbooks" do
     end
 
     it "returns a 400" do
-      expect(response.status.to_i).to eql(400)
+      expect(Integer(response.status)).to eql(400)
     end
 
     it "returns an error code" do
@@ -129,7 +129,7 @@ describe "POST /api/v1/cookbooks" do
     before(:each) { share_cookbook("redis-test", user, omitted_headers: ["X-Ops-Sign"]) }
 
     it "returns a 400" do
-      expect(response.status.to_i).to eql(400)
+      expect(Integer(response.status)).to eql(400)
     end
 
     it "returns an error code" do

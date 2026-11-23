@@ -546,7 +546,7 @@ describe CookbooksController do
     it "404s when the cookbook does not exist" do
       get :show, params: { id: "snarfle" }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -559,13 +559,13 @@ describe CookbooksController do
       get :download, params: { id: cookbook.name }
 
       expect(response).to redirect_to(cookbook_version_download_url(cookbook, version))
-      expect(response.status.to_i).to eql(302)
+      expect(Integer(response.status)).to eql(302)
     end
 
     it "404s when the cookbook does not exist" do
       get :download, params: { id: "snarfle" }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -584,7 +584,7 @@ describe CookbooksController do
       it "returns a 200" do
         put :follow, params: { id: cookbook }
 
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "renders the show follow button partial" do
@@ -614,7 +614,7 @@ describe CookbooksController do
       it "returns a 404" do
         put :follow, params: { id: "snarfle" }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -638,7 +638,7 @@ describe CookbooksController do
       it "redirects 200" do
         delete :follow, params: { id: cookbook }
 
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "renders the show follow button partial" do
@@ -666,7 +666,7 @@ describe CookbooksController do
       it "returns a 404" do
         delete :unfollow, params: { id: cookbook }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -807,7 +807,7 @@ describe CookbooksController do
               replacement: replacement_cookbook,
             } })
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -845,7 +845,7 @@ describe CookbooksController do
 
       delete :undeprecate, params: { id: cookbook }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -880,7 +880,7 @@ describe CookbooksController do
 
       put :toggle_featured, params: { id: unfeatured }
 
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
   end
 
@@ -890,7 +890,7 @@ describe CookbooksController do
     it "responds with a 200" do
       get :deprecate_search, params: { id: postgresql, q: "postgresql", format: :json }
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "responds with JSON" do
@@ -908,7 +908,7 @@ describe CookbooksController do
     it "defaults q to nil if not passed in" do
       get :deprecate_search, params: { id: postgresql, format: :json }
 
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
   end
 

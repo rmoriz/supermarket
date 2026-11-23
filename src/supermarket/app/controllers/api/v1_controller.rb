@@ -45,8 +45,8 @@ class Api::V1Controller < ApplicationController
   # between the index and search methods. Also +order+ which is for ordering.
   #
   def init_params
-    @start = params.fetch(:start, 0).to_i
-    @items = [params.fetch(:items, 10).to_i, item_limit].min
+    @start = Integer(params.fetch(:start, 0), exception: false) || 0
+    @items = [Integer(params.fetch(:items, 10), exception: false) || 10, item_limit].min
 
     if @start < 0 || @items < 0
       return error(
@@ -65,8 +65,8 @@ class Api::V1Controller < ApplicationController
   # Inteded to wrap the mechanism by which the limit is configured
   #
   def item_limit
-    configured_limit = ENV["API_ITEM_LIMIT"].to_i
-    if configured_limit > 0
+    configured_limit = Integer(ENV["API_ITEM_LIMIT"], exception: false)
+    if configured_limit&.positive?
       configured_limit
     else
       100

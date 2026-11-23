@@ -114,12 +114,12 @@ describe "api/v1/cookbooks/show" do
   # let's roll with when the latest cookbook was last updated_at
   it "displays the date the cookbook was last updated at" do
     expect(Time.parse(json_body["updated_at"]).to_i)
-      .to be_within(1).of(cookbook.updated_at.to_i)
+      .to be_within(1).of(Integer(cookbook.updated_at))
   end
 
   it "displays the date the cookbook was created at" do
     expect(Time.parse(json_body["created_at"]).to_i)
-      .to be_within(1).of(cookbook.created_at.to_i)
+      .to be_within(1).of(Integer(cookbook.created_at))
   end
 
   it "displays the total download count" do

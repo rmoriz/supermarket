@@ -82,7 +82,7 @@ class GroupMembersController < ApplicationController
 
   def check_admin_member_present
     if @group_member.admin?
-      unless @group_member.group.group_members.where(admin: true).count > 1
+      if @group_member.group.group_members.where(admin: true).count <= 1
         flash[:warning] = "Member could not be removed because a group must have at least one admin member"
         redirect_to group_path(@group_member.group)
       end

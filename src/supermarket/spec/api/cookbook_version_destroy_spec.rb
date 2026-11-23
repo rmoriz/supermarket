@@ -11,12 +11,12 @@ describe "DELETE /api/v1/cookbooks/:cookbook/versions/:version" do
     end
 
     it "returns a 403" do
-      expect(response.status.to_i).to eql(403)
+      expect(Integer(response.status)).to eql(403)
     end
 
     it "does not destroy the cookbook version" do
       get "/api/v1/cookbooks/redis-test/versions/1.2.0"
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "does not destroy other cookbook versions" do
@@ -35,7 +35,7 @@ describe "DELETE /api/v1/cookbooks/:cookbook/versions/:version" do
     end
 
     it "returns a 200" do
-      expect(response.status.to_i).to eql(200)
+      expect(Integer(response.status)).to eql(200)
     end
 
     it "returns the destroyed cookbook version metadata" do
@@ -44,7 +44,7 @@ describe "DELETE /api/v1/cookbooks/:cookbook/versions/:version" do
 
     it "destroys the cookbook version" do
       get "/api/v1/cookbooks/redis-test/versions/1.2.0"
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "doesn't destroy other cookbook versions" do
@@ -57,7 +57,7 @@ describe "DELETE /api/v1/cookbooks/:cookbook/versions/:version" do
     before { unshare_cookbook_version("redis-test", "1_1_0", user) }
 
     it "returns a 404" do
-      expect(response.status.to_i).to eql(404)
+      expect(Integer(response.status)).to eql(404)
     end
 
     it "returns a 404 message" do

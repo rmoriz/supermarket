@@ -9,7 +9,7 @@ module Supermarket
         }
 
         rows = ActiveRecord::Base.connection.execute(query).select do |row|
-          row["cnt"].to_i > 1
+          Integer(row["cnt"]) > 1
         end
 
         duplicate_ids = rows.flat_map do |row|
@@ -17,7 +17,7 @@ module Supermarket
             name: row["name"],
             version_constraint: row["version_constraint"],
             cookbook_version_id: row["cookbook_version_id"]
-          ).limit(row["cnt"].to_i - 1).pluck(:id)
+          ).limit(Integer(row["cnt"]) - 1).pluck(:id)
         end
 
         CookbookDependency.where(id: duplicate_ids).delete_all

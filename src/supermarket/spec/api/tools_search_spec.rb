@@ -7,7 +7,7 @@ describe "GET /api/v1/tools/search" do
   it "returns a 200" do
     get "/api/v1/tools-search"
 
-    expect(response.status.to_i).to eql(200)
+    expect(Integer(response.status)).to eql(200)
   end
 
   it "returns tools that match the search query" do

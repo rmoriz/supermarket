@@ -201,15 +201,15 @@ describe User do
         expiry = 1.hour.from_now
         new_auth = auth.dup.tap do |auth|
           auth[:credentials][:token] = "cool_token"
-          auth[:credentials][:expires_at] = expiry.to_i
+          auth[:credentials][:expires_at] = Integer(expiry)
           auth[:credentials][:refresh_token] = "fresh_refresh"
         end
 
         user = User.find_or_create_from_chef_oauth(new_auth).reload
         account = user.chef_account
 
-        expected_expiration = expiry.utc.to_i
-        actual_expiration = account.oauth_expires.utc.to_i
+        expected_expiration = Integer(expiry.utc)
+        actual_expiration = Integer(account.oauth_expires.utc)
 
         expect(account.username).to eql(auth["info"]["username"])
         expect(account.uid).to eql(auth["uid"])

@@ -96,7 +96,7 @@ describe ProfileController do
       it "returns a 200 on successful update" do
         post :update_install_preference, params: { preference: "knife" }
 
-        expect(response.status.to_i).to eql(200)
+        expect(Integer(response.status)).to eql(200)
       end
 
       it "updates the user's install preference" do
@@ -110,7 +110,7 @@ describe ProfileController do
       it "returns a 404" do
         post :update_install_preference, params: { preference: "knife" }
 
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end

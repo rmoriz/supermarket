@@ -12,7 +12,7 @@ module CollaboratorProcessing
     # are already collaborators
     user_ids -= ineligible_ids(resource) unless group_id
 
-    User.where(id: user_ids).each do |user|
+    User.where(id: user_ids).find_each do |user|
       collaborator = Collaborator.new(
         user_id: user.id,
         resourceable: resource,

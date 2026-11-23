@@ -83,7 +83,7 @@ class CookbookVersion < ApplicationRecord
 
   def cookbook_artifact_url
     if Paperclip::Attachment.default_options[:storage] == "s3"
-      ENV["S3_URLS_EXPIRE"].present? ? tarball.expiring_url(ENV["S3_URLS_EXPIRE"].to_i) : tarball.url
+      ENV["S3_URLS_EXPIRE"].present? ? tarball.expiring_url(Integer(ENV["S3_URLS_EXPIRE"], 10)) : tarball.url
     else
       "#{Supermarket::Host.full_url}#{tarball.url}"
     end
@@ -96,7 +96,7 @@ class CookbookVersion < ApplicationRecord
   def metric_result_pass_rate
     total_metric_results = metric_results.count
     if total_metric_results > 0
-      ((metric_results.where(failure: false).count / total_metric_results.to_f) * 100).round(0)
+      ((metric_results.where(failure: false).count / Float(total_metric_results)) * 100).round(0)
     else
       "-"
     end

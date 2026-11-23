@@ -29,7 +29,7 @@ describe "GET /api/v1/search" do
   it "returns a 200" do
     get "/api/v1/search"
 
-    expect(response.status.to_i).to eql(200)
+    expect(Integer(response.status)).to eql(200)
   end
 
   it "returns cookbooks that match the search query" do

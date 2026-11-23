@@ -52,7 +52,7 @@ describe TransferOwnershipController do
 
       it "returns a 404" do
         put :transfer, params: { id: cookbook, cookbook: { user_id: new_owner.id } }
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
   end
@@ -74,7 +74,7 @@ describe TransferOwnershipController do
       it "returns a 404 if the transfer request given has already been updated" do
         transfer_request.update(accepted: true)
         post :accept, params: { token: transfer_request }
-        expect(response.status.to_i).to eql(404)
+        expect(Integer(response.status)).to eql(404)
       end
     end
 

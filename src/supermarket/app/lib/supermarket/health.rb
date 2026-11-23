@@ -74,14 +74,14 @@ module Supermarket
                    end
 
       postgres_health_metric do
-        ActiveRecord::Base.connection
-          .query(wait_query)
-          .flatten
-          .first
-          .to_i
-          .tap do |waiting_on_lock|
-            @postgresql[:waiting_on_lock] = waiting_on_lock
-          end
+        Integer(
+          ActiveRecord::Base.connection
+            .query(wait_query)
+            .flatten
+            .first
+        ).tap do |waiting_on_lock|
+          @postgresql[:waiting_on_lock] = waiting_on_lock
+        end
       end
     end
 
@@ -90,9 +90,12 @@ module Supermarket
     #
     def connections
       postgres_health_metric do
-        ActiveRecord::Base.connection.query(
-          "SELECT count(*) FROM pg_stat_activity"
-        ).flatten.first.to_i.tap do |connections|
+        Integer(
+          ActiveRecord::Base.connection
+            .query("SELECT count(*) FROM pg_stat_activity")
+            .flatten
+            .first
+        ).tap do |connections|
           @postgresql[:connections] = connections
         end
       end
@@ -139,7 +142,7 @@ module Supermarket
         redis_info = Sidekiq.redis(&:info)
 
         %w{uptime_in_seconds connected_clients used_memory used_memory_peak}.each do |key|
-          @redis.store(key, redis_info.fetch(key, -1).to_i)
+          @redis.store(key, Integer(redis_info.fetch(key, -1)))
         end
       end
     end

@@ -47,7 +47,7 @@ describe Api::V1::QualityMetricsController do
           it "returns a 200" do
             post(:cookstyle_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.to_param, cookstyle_failure: true, cookstyle_feedback: "Cookbook Feedback", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-            expect(response.status.to_i).to eql(200)
+            expect(Integer(response.status)).to eql(200)
           end
 
           it "adds a metric result for cookstyle" do
@@ -77,7 +77,7 @@ describe Api::V1::QualityMetricsController do
             it "returns a 400" do
               post(:cookstyle_evaluation, params: { cookbook_name: cookbook.name, cookstyle_failure: "false", cookstyle_feedback: "", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-              expect(response.status.to_i).to eql(400)
+              expect(Integer(response.status)).to eql(400)
 
               expect(JSON.parse(response.body)).to eql(
                 "error_code" => I18n.t("api.error_codes.invalid_data"),
@@ -94,7 +94,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 404" do
           post(:cookstyle_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: "1010101.1.1", cookstyle_failure: true, cookstyle_feedback: "Cookbook Feedback", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(404)
+          expect(Integer(response.status)).to eql(404)
         end
       end
     end
@@ -103,7 +103,7 @@ describe Api::V1::QualityMetricsController do
       it "renders a 401 error about unauthorized post" do
         post(:cookstyle_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: "1010101.1.1", cookstyle_failure: true, cookstyle_feedback: "Cookbook Feedback", fieri_key: "not_the_key", format: :json })
 
-        expect(response.status.to_i).to eql(401)
+        expect(Integer(response.status)).to eql(401)
         expect(JSON.parse(response.body)).to eql(
           "error_code" => I18n.t("api.error_codes.unauthorized"),
           "error_messages" => [
@@ -131,7 +131,7 @@ describe Api::V1::QualityMetricsController do
           it "returns a 200" do
             post(:no_binaries_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.to_param, no_binaries_failure: true, no_binaries_feedback: "Binaries inside. :(", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-            expect(response.status.to_i).to eql(200)
+            expect(Integer(response.status)).to eql(200)
           end
 
           it "adds a metric result for no binaries check" do
@@ -146,7 +146,7 @@ describe Api::V1::QualityMetricsController do
             it "returns a 400" do
               post(:no_binaries_evaluation, params: { cookbook_name: cookbook.name, no_binaries_failure: "false", no_binaries_feedback: "", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-              expect(response.status.to_i).to eql(400)
+              expect(Integer(response.status)).to eql(400)
 
               expect(JSON.parse(response.body)).to eql(
                 "error_code" => I18n.t("api.error_codes.invalid_data"),
@@ -163,7 +163,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 404" do
           post(:no_binaries_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: "1010101.1.1", no_binaries_failure: true, no_binaries_feedback: "Binaries inside. :(", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(404)
+          expect(Integer(response.status)).to eql(404)
         end
       end
     end
@@ -172,7 +172,7 @@ describe Api::V1::QualityMetricsController do
       it "renders a 401 error about unauthorized post" do
         post(:no_binaries_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: "1010101.1.1", no_binaries_failure: true, no_binaries_feedback: "Binaries inside. :(", fieri_key: "not_the_key", format: :json })
 
-        expect(response.status.to_i).to eql(401)
+        expect(Integer(response.status)).to eql(401)
         expect(JSON.parse(response.body)).to eql(
           "error_code" => I18n.t("api.error_codes.unauthorized"),
           "error_messages" => [
@@ -197,7 +197,7 @@ describe Api::V1::QualityMetricsController do
 
         it "returns a 200" do
           post(:collaborators_evaluation, params: { cookbook_name: cookbook.name, collaborator_failure: false, collaborator_feedback: "This cookbook does not have sufficient collaborators.", fieri_key: "YOUR_FIERI_KEY", format: :json })
-          expect(response.status.to_i).to eql(200)
+          expect(Integer(response.status)).to eql(200)
         end
 
         it "updates the cookbook version's collaborator attributes" do
@@ -213,7 +213,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 400" do
           post(:collaborators_evaluation, params: { collaborator_failure: false, collaborator_feedback: "", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(400)
+          expect(Integer(response.status)).to eql(400)
 
           expect(JSON.parse(response.body)).to eql(
             "error_code" => I18n.t("api.error_codes.invalid_data"),
@@ -229,7 +229,7 @@ describe Api::V1::QualityMetricsController do
       it "renders a 401 error about unauthorized post" do
         post(:collaborators_evaluation, params: { cookbook_name: cookbook.name, collaborator_failure: true, collaborator_feedback: "Cookbook Feedback", fieri_key: "not_the_key", format: :json })
 
-        expect(response.status.to_i).to eql(401)
+        expect(Integer(response.status)).to eql(401)
         expect(JSON.parse(response.body)).to eql(
           "error_code" => I18n.t("api.error_codes.unauthorized"),
           "error_messages" => [
@@ -250,7 +250,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 200" do
           post(:contributing_file_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, contributing_file_failure: false, contributing_file_feedback: "passed", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(200)
+          expect(Integer(response.status)).to eql(200)
         end
 
         it "creates a contributing file metric" do
@@ -272,7 +272,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 400" do
           post(:contributing_file_evaluation, params: { cookbook_name: cookbook.name, contributing_file_failure: false, fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(400)
+          expect(Integer(response.status)).to eql(400)
         end
       end
     end
@@ -281,7 +281,7 @@ describe Api::V1::QualityMetricsController do
       it "renders a 401 error about unauthorized post" do
         post(:contributing_file_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, contributing_file_failure: false, fieri_key: "not_the_key", format: :json })
 
-        expect(response.status.to_i).to eql(401)
+        expect(Integer(response.status)).to eql(401)
       end
     end
   end
@@ -296,7 +296,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 200" do
           post(:testing_file_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, testing_file_failure: false, testing_file_feedback: "passed", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(200)
+          expect(Integer(response.status)).to eql(200)
         end
 
         it "creates a testing file metric" do
@@ -318,7 +318,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 400" do
           post(:testing_file_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, testing_file_failure: false, fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(400)
+          expect(Integer(response.status)).to eql(400)
         end
       end
 
@@ -326,7 +326,7 @@ describe Api::V1::QualityMetricsController do
         it "renders a 401 error about unauthorized post" do
           post(:testing_file_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, testing_file_failure: false, testing_file_feedback: "passed", fieri_key: "not_the_key", format: :json })
 
-          expect(response.status.to_i).to eql(401)
+          expect(Integer(response.status)).to eql(401)
         end
       end
     end
@@ -342,7 +342,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 200" do
           post(:version_tag_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, version_tag_failure: false, version_tag_feedback: "passed", fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(200)
+          expect(Integer(response.status)).to eql(200)
         end
 
         it "creates a testing file metric" do
@@ -364,7 +364,7 @@ describe Api::V1::QualityMetricsController do
         it "returns a 400" do
           post(:version_tag_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, version_tag_failure: false, fieri_key: "YOUR_FIERI_KEY", format: :json })
 
-          expect(response.status.to_i).to eql(400)
+          expect(Integer(response.status)).to eql(400)
         end
       end
 
@@ -372,7 +372,7 @@ describe Api::V1::QualityMetricsController do
         it "renders a 401 error about unauthorized post" do
           post(:version_tag_evaluation, params: { cookbook_name: cookbook.name, cookbook_version: version.version, version_tag_failure: false, version_tag_feedback: "passed", fieri_key: "not_the_key", format: :json })
 
-          expect(response.status.to_i).to eql(401)
+          expect(Integer(response.status)).to eql(401)
         end
       end
     end

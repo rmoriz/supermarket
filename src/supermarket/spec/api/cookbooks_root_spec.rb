@@ -4,7 +4,7 @@ describe "GET /api/v1/cookbooks" do
   it "returns a 200" do
     get "/api/v1/cookbooks"
 
-    expect(response.status.to_i).to eql(200)
+    expect(Integer(response.status)).to eql(200)
   end
 
   context "when there are no cookbooks" do

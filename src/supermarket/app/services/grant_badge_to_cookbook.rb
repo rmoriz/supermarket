@@ -34,7 +34,7 @@ class GrantBadgeToCookbook
   end
 
   def add_badge_to_cookbook(cookbook)
-    return badge_is_not_valid unless Badgeable::BADGES.include? badge_name.to_s
+    return badge_is_not_valid if Badgeable::BADGES.exclude? badge_name.to_s
     return cookbook_already_has_badge if cookbook.is? badge_name
 
     cookbook.badges += [badge_name]

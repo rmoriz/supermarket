@@ -46,14 +46,17 @@ describe FakesController do
     end
 
     context "finding users" do
+      let!(:eligible_users) { User.where(id: [user1.id, user2.id, user3.id]) }
+      let!(:found_users) { User.where(id: [user1.id, user2.id]) }
+
       it "finds all eligible users" do
-        expect(User).to receive(:where).with(id: ["#{user1.id}", "#{user2.id}", "#{user3.id}"]).and_return(users)
+        expect(User).to receive(:where).with(id: ["#{user1.id}", "#{user2.id}", "#{user3.id}"]).and_return(eligible_users)
         subject.add_users_as_collaborators(cookbook, user_ids)
       end
 
       it "does not include non-eligible users" do
         allow(Collaborator).to receive(:ineligible_collaborators_for).and_return([user2])
-        expect(User).to receive(:where).with(id: ["#{user1.id}", "#{user3.id}"]).and_return([user1, user2])
+        expect(User).to receive(:where).with(id: ["#{user1.id}", "#{user3.id}"]).and_return(found_users)
         subject.add_users_as_collaborators(cookbook, user_ids)
       end
     end
