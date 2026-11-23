@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Chef Software, Inc.
+# Copyright:: 2014 Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,36 +14,38 @@
 # limitations under the License.
 #
 
-name "supermarket"
+name 'supermarket'
 license :project_license
 
 source path: File.expand_path('../../../../src/supermarket', project.filepath)
 
-dependency "cacerts"
-dependency "openresty"
-dependency "postgresql13"
-dependency "redis"
-dependency "ruby"
-dependency "runit"
-dependency "logrotate"
-dependency "file"
-dependency "libarchive"
+dependency 'cacerts'
+dependency 'openresty'
+# 13 stays in the package so pg_upgrade can read an existing cluster;
+# it has to stay above 17 so 17 is linked into embedded/bin last.
+dependency 'postgresql13'
+dependency 'postgresql17'
+dependency 'redis'
+dependency 'ruby'
+dependency 'runit'
+dependency 'logrotate'
+dependency 'file'
+dependency 'libarchive'
 
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
-  bundle "package --no-install", env: env
+  bundle 'package --no-install', env: env
   # This statement is to replace the --without flag which is getting deprecated
   bundle "config set without 'development doc'"
-  bundle "install" \
+  bundle 'install' \
          " --jobs #{workers}" \
-         " --retry 3" \
-         " --path=vendor/bundle",
+         ' --retry 3' \
+         ' --path=vendor/bundle',
          env: env
 
-
   # This fails because we're installing Ruby C extensions in the wrong place!
-  bundle "exec rake assets:precompile", env: env
+  bundle 'exec rake assets:precompile', env: env
 
   sync project_dir, "#{install_dir}/embedded/service/supermarket/",
     exclude: %w( .cookbooks .direnv .envrc .env.* .gitignore .kitchen*

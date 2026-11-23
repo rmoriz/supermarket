@@ -172,7 +172,9 @@ default['supermarket']['nginx']['default']['modules'] = []
 # ## Postgres
 default['supermarket']['postgresql']['enable'] = true
 default['supermarket']['postgresql']['external'] = false
-default['supermarket']['postgresql']['version'] = '13'
+# Changing this major version makes the pg_upgrade resource migrate the
+# cluster; the binaries of the previous major stay in the package.
+default['supermarket']['postgresql']['version'] = '17'
 default['supermarket']['postgresql']['username'] = node['supermarket']['user']
 default['supermarket']['postgresql']['data_directory'] = "#{node['supermarket']['var_directory']}/postgresql/#{node['supermarket']['postgresql']['version']}/data"
 

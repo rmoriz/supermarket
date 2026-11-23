@@ -27,7 +27,8 @@ The following table shows which version of PostgreSQL is bundled with each Super
 | >= 4.2 and < 5.0       | 9.3                |
 | >= 5.0 and < 5.2.0     | 13.4               |
 | >= 5.2.0 and < 5.3.0   | 13.18              |
-| >= 5.3.0               | 13.22              |
+| >= 5.3.0 and < 5.4.0   | 13.22              |
+| >= 5.4.0               | 17.12              |
 
 ## Before you upgrade
 
@@ -50,6 +51,14 @@ To upgrade Supermarket, follow these steps:
     ```
 
 1. Back up the `/var/opt/supermarket` directory.
+
+    Packages from 5.4.0 on bring PostgreSQL 17 and migrate an existing 13
+    cluster in the `reconfigure` step below. The migration copies the data
+    directory, so keep free disk space equal to its size and expect the
+    downtime of a database dump and restore. If your data is large, raise
+    `default['supermarket']['postgresql']['pg_upgrade_timeout']` in
+    `supermarket.rb` beforehand.
+
 1. Download a Supermarket package from [Chef Downloads](https://www.chef.io/downloads).
 1. Install the new package using your distribution's package manager:
 
